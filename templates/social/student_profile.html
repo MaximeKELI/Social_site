@@ -1,0 +1,88 @@
+{% extends 'social/base.html' %}
+
+{% block title %}{{ profile_student.full_name }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if profile_student.profile_picture %}
+                    <img src="{{ profile_student.profile_picture.url }}" class="profile-picture mb-3" style="width: 150px; height: 150px;" alt="Profile">
+                {% else %}
+                    <i class="bi bi-person-circle mb-3" style="font-size: 8rem; color: var(--primary-color);"></i>
+                {% endif %}
+                <h3 class="mb-1">{{ profile_student.full_name }}</h3>
+                <p class="text-muted mb-2">
+                    <span class="badge bg-{% if profile_student.status == 'current' %}primary{% else %}secondary{% endif %}">
+                        {{ profile_student.get_status_display }}
+                    </span>
+                </p>
+                <p class="text-muted small mb-3">{{ profile_student.school.name }}</p>
+                {% if profile_student.graduation_year %}
+                    <p class="mb-3"><strong>Promotion:</strong> {{ profile_student.graduation_year }}</p>
+                {% endif %}
+                {% if profile_student.email %}
+                    <p class="mb-2"><i class="bi bi-envelope"></i> {{ profile_student.email }}</p>
+                {% endif %}
+                {% if profile_student.phone %}
+                    <p class="mb-3"><i class="bi bi-telephone"></i> {{ profile_student.phone }}</p>
+                {% endif %}
+                {% if profile_student.bio %}
+                    <div class="text-start">
+                        <h6>Biographie</h6>
+                        <p class="text-muted">{{ profile_student.bio|linebreaks }}</p>
+                    </div>
+                {% endif %}
+                {% if user.is_authenticated and user.student_profile and user.student_profile != profile_student %}
+                    <a href="{% url 'start_conversation' profile_student.id %}" class="btn btn-primary w-100">
+                        <i class="bi bi-chat"></i> Envoyer un message
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <h4 class="mb-4">Posts publiés</h4>
+        {% for post in posts %}
+        <div class="card post-card">
+            <div class="card-body">
+                <div class="post-header">
+                    {% if post.author.profile_picture %}
+                        <img src="{{ post.author.profile_picture.url }}" class="profile-picture" alt="Profile">
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0">{{ post.author.full_name }}</h6>
+                        <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <h5 class="mb-2">{{ post.title }}</h5>
+                <p class="mb-3">{{ post.content|linebreaks }}</p>
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                {% endif %}
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted">
+                        <i class="bi bi-heart-fill text-danger"></i> {{ post.like_count }} likes
+                    </span>
+                    <a href="{% url 'post_detail' post.id %}" class="text-decoration-none text-muted">
+                        <i class="bi bi-chat"></i> Voir les commentaires
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">Aucun post publié</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,54 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Messages - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mb-4">
+                    <i class="bi bi-chat-dots"></i> Mes conversations
+                </h3>
+                
+                {% for conversation in conversations %}
+                    {% for participant in conversation.participants.all %}
+                        {% if participant != user.student_profile %}
+                        <a href="{% url 'conversation_detail' conversation.id %}" class="text-decoration-none text-dark">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        {% if participant.profile_picture %}
+                                            <img src="{{ participant.profile_picture.url }}" class="profile-picture me-3" alt="Profile">
+                                        {% else %}
+                                            <i class="bi bi-person-circle me-3" style="font-size: 3rem; color: var(--primary-color);"></i>
+                                        {% endif %}
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1">{{ participant.full_name }}</h5>
+                                            <p class="text-muted mb-0 small">{{ participant.school.name }}</p>
+                                            <small class="text-muted">Dernière activité: {{ conversation.updated_at|timesince }} ago</small>
+                                        </div>
+                                        {% if conversation.unread_count > 0 %}
+                                            <span class="badge bg-danger">{{ conversation.unread_count }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Aucune conversation. Commencez à discuter avec vos camarades !</p>
+                    <a href="{% url 'student_list' %}" class="btn btn-primary">
+                        <i class="bi bi-people"></i> Voir les étudiants
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,87 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Accueil - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center mb-5">
+        <h1 class="display-4 fw-bold mb-4" style="color: var(--primary-color);">
+            <i class="bi bi-mortarboard-fill"></i> Bienvenue sur School Social
+        </h1>
+        <p class="lead text-muted mb-5">
+            La plateforme qui connecte les écoles, les étudiants actuels et les anciens étudiants.
+            Rejoignez votre communauté et restez en contact !
+        </p>
+        
+        {% if not user.is_authenticated %}
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{% url 'register_student' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-plus"></i> Inscription Étudiant
+            </a>
+            <a href="{% url 'register_school' %}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-building"></i> Inscription École
+            </a>
+            <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Connexion
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="bi bi-people-fill" style="font-size: 3rem; color: var(--primary-color);"></i>
+            </div>
+            <h4>Réseau Social</h4>
+            <p class="text-muted">Connectez-vous avec vos camarades de classe, anciens et nouveaux étudiants de votre école.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="bi bi-chat-dots-fill" style="font-size: 3rem; color: var(--secondary-color);"></i>
+            </div>
+            <h4>Messagerie</h4>
+            <p class="text-muted">Discutez en privé avec vos amis et collègues. Restez en contact facilement.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="bi bi-file-post" style="font-size: 3rem; color: var(--success-color);"></i>
+            </div>
+            <h4>Partage de Contenu</h4>
+            <p class="text-muted">Partagez vos actualités, photos et moments avec votre communauté scolaire.</p>
+        </div>
+    </div>
+</div>
+
+{% if schools %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Écoles inscrites</h2>
+        <div class="row">
+            {% for school in schools %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        {% if school.logo %}
+                            <img src="{{ school.logo.url }}" alt="{{ school.name }}" class="img-fluid mb-3" style="max-height: 100px;">
+                        {% else %}
+                            <i class="bi bi-building" style="font-size: 3rem; color: var(--primary-color);"></i>
+                        {% endif %}
+                        <h5 class="card-title">{{ school.name }}</h5>
+                        <p class="text-muted small">{{ school.description|truncatewords:15 }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

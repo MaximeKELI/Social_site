@@ -1,0 +1,42 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Connexion - School Social{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="text-center mb-4">
+                    <i class="bi bi-box-arrow-in-right"></i> Connexion
+                </h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nom d'utilisateur</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="bi bi-box-arrow-in-right"></i> Se connecter
+                    </button>
+                </form>
+                <hr>
+                <div class="text-center">
+                    <p class="mb-2">Pas encore de compte ?</p>
+                    <a href="{% url 'register_student' %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-person-plus"></i> Inscription Étudiant
+                    </a>
+                    <a href="{% url 'register_school' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-building"></i> Inscription École
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

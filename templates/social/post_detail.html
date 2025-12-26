@@ -1,0 +1,79 @@
+{% extends 'social/base.html' %}
+
+{% block title %}{{ post.title }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="post-header">
+                    {% if post.author.profile_picture %}
+                        <img src="{{ post.author.profile_picture.url }}" class="profile-picture" alt="Profile">
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0">
+                            <a href="{% url 'student_profile' post.author.id %}" class="text-decoration-none">
+                                {{ post.author.full_name }}
+                            </a>
+                        </h6>
+                        <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <h3 class="mb-3">{{ post.title }}</h3>
+                <p class="mb-3">{{ post.content|linebreaks }}</p>
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                {% endif %}
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="text-muted">
+                        <i class="bi bi-heart-fill text-danger"></i> {{ post.like_count }} likes
+                    </span>
+                    <span class="text-muted">
+                        <i class="bi bi-chat"></i> {{ comments.count }} commentaires
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3">Commentaires</h5>
+                {% if user.is_authenticated and user.student_profile %}
+                <form method="post" class="mb-4">
+                    {% csrf_token %}
+                    {{ comment_form.content }}
+                    <button type="submit" class="btn btn-primary mt-2">
+                        <i class="bi bi-send"></i> Commenter
+                    </button>
+                </form>
+                {% endif %}
+                
+                <div class="comment-section">
+                    {% for comment in comments %}
+                    <div class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if comment.author.profile_picture %}
+                                <img src="{{ comment.author.profile_picture.url }}" class="profile-picture me-2" alt="Profile">
+                            {% else %}
+                                <i class="bi bi-person-circle me-2" style="font-size: 1.5rem;"></i>
+                            {% endif %}
+                            <div>
+                                <div class="fw-bold">{{ comment.author.full_name }}</div>
+                                <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                        <p class="mb-0">{{ comment.content|linebreaks }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3">Aucun commentaire pour le moment</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

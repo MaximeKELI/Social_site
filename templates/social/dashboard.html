@@ -1,0 +1,156 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Tableau de bord - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-3 mb-4">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="bi bi-mortarboard-fill"></i> {{ student.school.name }}
+            </h5>
+            <a href="{% url 'dashboard' %}" class="sidebar-item">
+                <i class="bi bi-house-door"></i> Accueil
+            </a>
+            <a href="{% url 'create_post' %}" class="sidebar-item">
+                <i class="bi bi-plus-circle"></i> Créer un post
+            </a>
+            <a href="{% url 'student_list' %}" class="sidebar-item">
+                <i class="bi bi-people"></i> Étudiants
+            </a>
+            <a href="{% url 'conversations_list' %}" class="sidebar-item">
+                <i class="bi bi-chat-dots"></i> Messages
+                {% if conversations %}
+                    {% for conv in conversations %}
+                        {% if conv.unread_count > 0 %}
+                            <span class="badge-notification">{{ conv.unread_count }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </a>
+            <a href="{% url 'student_profile' student.id %}" class="sidebar-item">
+                <i class="bi bi-person"></i> Mon profil
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    {% if student.profile_picture %}
+                        <img src="{{ student.profile_picture.url }}" class="profile-picture me-3" alt="Profile">
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 3rem; color: var(--primary-color);"></i>
+                    {% endif %}
+                    <div>
+                        <h5 class="mb-0">{{ student.full_name }}</h5>
+                        <small class="text-muted">{{ student.school.name }}</small>
+                    </div>
+                </div>
+                <a href="{% url 'create_post' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-pencil-square"></i> Quoi de neuf ?
+                </a>
+            </div>
+        </div>
+        
+        <h5 class="mb-3">Fil d'actualité</h5>
+        
+        {% for post in posts %}
+        <div class="card post-card">
+            <div class="card-body">
+                <div class="post-header">
+                    {% if post.author.profile_picture %}
+                        <img src="{{ post.author.profile_picture.url }}" class="profile-picture" alt="Profile">
+                    {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0">{{ post.author.full_name }}</h6>
+                        <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <h5 class="mb-2">{{ post.title }}</h5>
+                <p class="mb-3">{{ post.content|linebreaks }}</p>
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                {% endif %}
+                <div class="d-flex align-items-center gap-3">
+                    <button class="like-btn {% if student in post.likes.all %}liked{% endif %}" 
+                            data-post-id="{{ post.id }}" onclick="likePost({{ post.id }})">
+                        <i class="bi bi-heart{% if student in post.likes.all %}-fill{% endif %}"></i>
+                        <span id="like-count-{{ post.id }}">{{ post.like_count }}</span>
+                    </button>
+                    <a href="{% url 'post_detail' post.id %}" class="text-decoration-none text-muted">
+                        <i class="bi bi-chat"></i> Commenter
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">Aucun post pour le moment. Soyez le premier à publier !</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="mb-3">Conversations récentes</h6>
+                {% for conversation in conversations|slice:":5" %}
+                    {% for participant in conversation.participants.all %}
+                        {% if participant != student %}
+                            <a href="{% url 'conversation_detail' conversation.id %}" class="d-flex align-items-center mb-3 text-decoration-none text-dark">
+                                {% if participant.profile_picture %}
+                                    <img src="{{ participant.profile_picture.url }}" class="profile-picture me-2" alt="Profile">
+                                {% else %}
+                                    <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ participant.full_name }}</div>
+                                    <small class="text-muted">Dernier message</small>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% empty %}
+                    <p class="text-muted small">Aucune conversation</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function likePost(postId) {
+    fetch(`/post/${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.querySelector(`[data-post-id="${postId}"]`);
+        const countEl = document.getElementById(`like-count-${postId}`);
+        
+        if (data.liked) {
+            btn.classList.add('liked');
+            btn.innerHTML = `<i class="bi bi-heart-fill"></i> <span id="like-count-${postId}">${data.like_count}</span>`;
+        } else {
+            btn.classList.remove('liked');
+            btn.innerHTML = `<i class="bi bi-heart"></i> <span id="like-count-${postId}">${data.like_count}</span>`;
+        }
+        countEl.textContent = data.like_count;
+    });
+}
+</script>
+{% endblock %}
+

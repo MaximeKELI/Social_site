@@ -1,0 +1,71 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Liste des étudiants - School Social{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mb-4">
+                    <i class="bi bi-people"></i> Liste des étudiants
+                </h3>
+                <form method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" placeholder="Rechercher un étudiant..." value="{{ search_query }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i> Rechercher
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for student in students %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if student.profile_picture %}
+                    <img src="{{ student.profile_picture.url }}" class="profile-picture mb-3" style="width: 100px; height: 100px;" alt="Profile">
+                {% else %}
+                    <i class="bi bi-person-circle mb-3" style="font-size: 5rem; color: var(--primary-color);"></i>
+                {% endif %}
+                <h5 class="mb-1">{{ student.full_name }}</h5>
+                <p class="text-muted small mb-2">
+                    <span class="badge bg-{% if student.status == 'current' %}primary{% else %}secondary{% endif %}">
+                        {{ student.get_status_display }}
+                    </span>
+                </p>
+                {% if student.graduation_year %}
+                    <p class="text-muted small mb-2">Promotion {{ student.graduation_year }}</p>
+                {% endif %}
+                {% if student.bio %}
+                    <p class="small text-muted mb-3">{{ student.bio|truncatewords:15 }}</p>
+                {% endif %}
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'student_profile' student.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-person"></i> Profil
+                    </a>
+                    <a href="{% url 'start_conversation' student.id %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-chat"></i> Message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">Aucun étudiant trouvé</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
