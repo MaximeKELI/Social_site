@@ -1,0 +1,79 @@
+{% extends 'social/base.html' %}
+
+{% block title %}{{ event.title }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            {% if event.image %}
+                <img src="{{ event.image.url }}" class="card-img-top" style="height: 300px; object-fit: cover;" alt="{{ event.title }}">
+            {% endif %}
+            <div class="card-body">
+                <h2 class="mb-3">{{ event.title }}</h2>
+                <p class="mb-4">{{ event.description|linebreaks }}</p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-calendar"></i> Date et heure</h6>
+                        <p class="text-muted">
+                            Du {{ event.start_date|date:"d M Y à H:i" }}<br>
+                            Au {{ event.end_date|date:"d M Y à H:i" }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-geo-alt"></i> Lieu</h6>
+                        <p class="text-muted">{{ event.location }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-building"></i> Organisateur</h6>
+                    <p class="text-muted">{{ event.organizer.name if event.organizer_school else event.organizer.full_name }}</p>
+                </div>
+                
+                {% if event.group %}
+                <div class="mb-3">
+                    <h6><i class="bi bi-people"></i> Groupe</h6>
+                    <a href="{% url 'school_group_detail' event.group.id %}" class="text-decoration-none">
+                        {{ event.group.name }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h5 class="mb-3">Participants</h5>
+                <h3 class="mb-3">{{ event.attendee_count }}</h3>
+            </div>
+        </div>
+        
+        {% if event.attendees.exists %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Liste des participants</h6>
+            </div>
+            <div class="card-body">
+                {% for attendee in event.attendees.all|slice:":10" %}
+                <div class="d-flex align-items-center mb-2">
+                    {% if attendee.profile_picture %}
+                        <img src="{{ attendee.profile_picture.url }}" class="profile-picture me-2" alt="Profile">
+                    {% else %}
+                        <i class="bi bi-person-circle me-2" style="font-size: 1.5rem;"></i>
+                    {% endif %}
+                    <a href="{% url 'student_profile' attendee.id %}" class="text-decoration-none">
+                        {{ attendee.full_name }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
