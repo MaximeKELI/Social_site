@@ -60,6 +60,8 @@ class Student(models.Model):
 class Conversation(models.Model):
     """Modèle pour les conversations entre étudiants"""
     participants = models.ManyToManyField(Student, related_name='conversations', verbose_name="Participants")
+    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True, related_name='group_chat', verbose_name="Groupe")
+    is_group_chat = models.BooleanField(default=False, verbose_name="Chat de groupe")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Dernière mise à jour")
     
@@ -69,6 +71,8 @@ class Conversation(models.Model):
         ordering = ['-updated_at']
     
     def __str__(self):
+        if self.is_group_chat and self.group:
+            return f"Chat du groupe: {self.group.name}"
         participants_list = ", ".join([p.full_name for p in self.participants.all()[:3]])
         return f"Conversation: {participants_list}"
 
@@ -137,6 +141,7 @@ class Notification(models.Model):
         ('comment', 'Commentaire sur un post'),
         ('message', 'Nouveau message'),
         ('post', 'Nouveau post'),
+        ('group', 'Nouveau groupe'),
     ]
     
     recipient = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='notifications', verbose_name="Destinataire")
@@ -146,6 +151,7 @@ class Notification(models.Model):
     message = models.TextField(verbose_name="Message")
     related_post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Post lié")
     related_message = models.ForeignKey(Message, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Message lié")
+    related_group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True, verbose_name="Groupe lié")
     is_read = models.BooleanField(default=False, verbose_name="Lu")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     

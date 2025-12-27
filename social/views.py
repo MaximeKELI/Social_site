@@ -463,20 +463,30 @@ def group_detail(request, group_id):
         action = request.POST.get('action')
         if action == 'join':
             group.members.add(student)
+            # Ajouter l'étudiant au chat de groupe s'il existe
+            group_chat = Conversation.objects.filter(group=group, is_group_chat=True).first()
+            if group_chat:
+                group_chat.participants.add(student)
             messages.success(request, f'Vous avez rejoint le groupe {group.name} !')
         elif action == 'leave':
             group.members.remove(student)
+            # Retirer l'étudiant du chat de groupe
+            group_chat = Conversation.objects.filter(group=group, is_group_chat=True).first()
+            if group_chat:
+                group_chat.participants.remove(student)
             messages.success(request, f'Vous avez quitté le groupe {group.name}.')
         return redirect('group_detail', group_id=group_id)
     
     posts = Post.objects.filter(author__in=group.members.all(), school=group.school).order_by('-created_at')[:10]
     events = Event.objects.filter(group=group).order_by('start_date')
+    group_chat = Conversation.objects.filter(group=group, is_group_chat=True).first()
     
     context = {
         'group': group,
         'is_member': is_member,
         'posts': posts,
         'events': events,
+        'group_chat': group_chat,
     }
     return render(request, 'social/group_detail.html', context)
 
@@ -505,7 +515,31 @@ def create_group(request):
                 group.image = request.FILES['image']
             group.members.add(student)
             group.save()
-            messages.success(request, 'Groupe créé avec succès !')
+            
+            # Créer un chat de groupe
+            group_chat = Conversation.objects.create(
+                group=group,
+                is_group_chat=True
+            )
+            group_chat.participants.add(student)
+            
+            # Notifier tous les étudiants de la même école
+            school_students = Student.objects.filter(
+                school=student.school,
+                is_active=True
+            ).exclude(id=student.id)
+            
+            for school_student in school_students:
+                Notification.objects.create(
+                    recipient=school_student,
+                    sender=student,
+                    notification_type='group',
+                    title='Nouveau groupe créé',
+                    message=f"{student.full_name} a créé un nouveau groupe: {group.name}",
+                    related_group=group
+                )
+            
+            messages.success(request, 'Groupe créé avec succès ! Tous les étudiants de votre école ont été notifiés.')
             return redirect('group_detail', group_id=group.id)
         else:
             messages.error(request, 'Veuillez remplir tous les champs requis.')
