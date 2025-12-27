@@ -363,10 +363,17 @@ def school_statistics(request):
     total_events = Event.objects.filter(school=school).count()
     total_messages = Message.objects.filter(conversation__participants_schools=school).count()
     
-    # Statistiques par mois (posts)
-    posts_by_month = Post.objects.filter(school=school).extra(
-        select={'month': "strftime('%%Y-%%m', created_at)"}
-    ).values('month').annotate(count=Count('id')).order_by('month')
+    # Statistiques par mois (posts) - SQLite
+    from django.db import connection
+    if 'sqlite' in connection.vendor:
+        posts_by_month = Post.objects.filter(school=school).extra(
+            select={'month': "strftime('%%Y-%%m', created_at)"}
+        ).values('month').annotate(count=Count('id')).order_by('month')
+    else:
+        # Pour PostgreSQL
+        posts_by_month = Post.objects.filter(school=school).extra(
+            select={'month': "to_char(created_at, 'YYYY-MM')"}
+        ).values('month').annotate(count=Count('id')).order_by('month')
     
     # Statistiques par statut d'étudiant
     students_by_status = Student.objects.filter(school=school, is_active=True).values('status').annotate(count=Count('id'))
@@ -415,9 +422,15 @@ def school_statistics_chart(request, chart_type):
     plt.figure(figsize=(10, 6))
     
     if chart_type == 'posts_by_month':
-        posts = Post.objects.filter(school=school).extra(
-            select={'month': "strftime('%%Y-%%m', created_at)"}
-        ).values('month').annotate(count=Count('id')).order_by('month')
+        from django.db import connection
+        if 'sqlite' in connection.vendor:
+            posts = Post.objects.filter(school=school).extra(
+                select={'month': "strftime('%%Y-%%m', created_at)"}
+            ).values('month').annotate(count=Count('id')).order_by('month')
+        else:
+            posts = Post.objects.filter(school=school).extra(
+                select={'month': "to_char(created_at, 'YYYY-MM')"}
+            ).values('month').annotate(count=Count('id')).order_by('month')
         
         months = [p['month'] for p in posts]
         counts = [p['count'] for p in posts]
