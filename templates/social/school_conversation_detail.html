@@ -1,0 +1,67 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Conversation - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex align-items-center">
+                <a href="{% url 'school_conversations_list' %}" class="btn btn-sm btn-outline-secondary me-3">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+                <div class="d-flex align-items-center">
+                    {% for participant in other_participants %}
+                        {% if participant.profile_picture %}
+                            <img src="{{ participant.profile_picture.url }}" class="profile-picture me-2" alt="Profile">
+                        {% else %}
+                            <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                        {% endif %}
+                        <h5 class="mb-0">{{ participant.full_name }}</h5>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-body" style="height: 500px; overflow-y: auto; background-color: #f8fafc;">
+                {% for message in messages %}
+                <div class="d-flex mb-3 {% if message.sender_school == user.school_profile %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div class="message-bubble {% if message.sender_school == user.school_profile %}message-sent{% else %}message-received{% endif %}">
+                        {% if message.sender_student %}
+                            <div class="small mb-1 fw-bold">{{ message.sender_student.full_name }}</div>
+                        {% elif message.sender_school %}
+                            <div class="small mb-1 fw-bold">{{ message.sender_school.name }}</div>
+                        {% endif %}
+                        <div>{{ message.content|linebreaks }}</div>
+                        <div class="small mt-1" style="opacity: 0.8;">
+                            {{ message.created_at|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="bi bi-chat" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Aucun message. Commencez la conversation !</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <form method="post" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <textarea name="content" class="form-control" rows="3" placeholder="Tapez votre message..." required></textarea>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Envoyer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-scroll to bottom
+const messageContainer = document.querySelector('.card-body');
+messageContainer.scrollTop = messageContainer.scrollHeight;
+</script>
+{% endblock %}
+
