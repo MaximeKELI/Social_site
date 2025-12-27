@@ -200,6 +200,10 @@
                 Assistant IA
             </h3>
             <small>Posez-moi vos questions, je suis là pour vous aider !</small>
+            <div id="quotaWarning" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; font-size: 0.85rem;">
+                <i class="bi bi-exclamation-triangle"></i> 
+                <strong>Note:</strong> Le quota de l'API peut être limité. Si vous rencontrez des erreurs, veuillez réessayer plus tard.
+            </div>
         </div>
         
         <div class="chatbot-messages" id="chatbotMessages">
@@ -290,8 +294,23 @@ chatbotForm.addEventListener('submit', async (e) => {
         if (data.success) {
             addMessage(data.response, 'bot');
         } else {
-            addMessage('Désolé, une erreur est survenue. Veuillez réessayer.', 'bot');
-            console.error('Erreur chatbot:', data.error);
+            // Message d'erreur personnalisé selon le type
+            let errorMessage = 'Désolé, une erreur est survenue. Veuillez réessayer.';
+            
+            if (data.error_type === 'quota_exceeded') {
+                errorMessage = '⚠️ Le quota de l\'API Google Gemini a été dépassé. Le service sera disponible une fois le quota réinitialisé (généralement après quelques minutes ou heures).';
+                // Afficher l'avertissement dans le header
+                document.getElementById('quotaWarning').style.display = 'block';
+            } else if (data.error_type === 'model_not_found') {
+                errorMessage = '⚠️ Le modèle IA n\'est pas disponible. Veuillez contacter l\'administrateur.';
+            } else if (data.error_type === 'authentication_error') {
+                errorMessage = '⚠️ Erreur d\'authentification. Veuillez contacter l\'administrateur.';
+            } else if (data.error) {
+                errorMessage = data.error;
+            }
+            
+            addMessage(errorMessage, 'bot');
+            console.error('Erreur chatbot:', data.error || data);
         }
     } catch (error) {
         hideTypingIndicator();

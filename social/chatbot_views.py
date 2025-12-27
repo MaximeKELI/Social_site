@@ -66,17 +66,23 @@ def chatbot_api(request):
             school = request.user.school_profile
             user_context = f"L'utilisateur est une école nommée {school.name}."
         
-        # Créer le modèle Gemini (utiliser gemini-1.5-flash qui est plus rapide et gratuit)
-        # Alternatives: 'gemini-1.5-pro', 'gemini-1.5-flash'
+        # Créer le modèle Gemini (utiliser gemini-2.0-flash qui est rapide et disponible)
+        # Modèles disponibles: gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash
+        model_name = 'gemini-2.0-flash'  # Modèle rapide et gratuit
+        
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-        except Exception:
-            # Fallback vers gemini-1.5-pro si flash n'est pas disponible
+            model = genai.GenerativeModel(model_name)
+        except Exception as model_error:
+            logger.warning(f"Modèle {model_name} non disponible, tentative avec gemini-2.5-flash")
             try:
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-2.5-flash')
             except Exception:
-                # Dernier fallback vers gemini-pro
-                model = genai.GenerativeModel('gemini-pro')
+                logger.warning("Modèle gemini-2.5-flash non disponible, tentative avec gemini-2.0-flash-lite")
+                try:
+                    model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                except Exception as e:
+                    logger.error(f"Tous les modèles ont échoué: {str(e)}")
+                    raise Exception(f"Aucun modèle Gemini disponible. Erreur: {str(e)}")
         
         # Construire le prompt avec contexte
         system_prompt = """Tu es un assistant IA intelligent et bienveillant pour une plateforme sociale scolaire.
@@ -113,9 +119,38 @@ Réponds toujours en français."""
         })
         
     except Exception as e:
-        logger.error(f"Erreur dans chatbot_api: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'error': 'Une erreur est survenue. Veuillez réessayer plus tard.'
-        }, status=500)
+        error_str = str(e)
+        logger.error(f"Erreur dans chatbot_api: {error_str}", exc_info=True)
+        
+        # Gestion spécifique des erreurs de quota
+        if '429' in error_str or 'quota' in error_str.lower() or 'ResourceExhausted' in error_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'Le quota de l\'API Google Gemini a été dépassé. Veuillez vérifier votre plan et vos limites d\'utilisation. Le service sera disponible une fois le quota réinitialisé.',
+                'error_type': 'quota_exceeded'
+            }, status=429)
+        
+        # Gestion des erreurs de modèle non trouvé
+        elif '404' in error_str or 'not found' in error_str.lower():
+            return JsonResponse({
+                'success': False,
+                'error': 'Le modèle IA demandé n\'est pas disponible. Veuillez contacter l\'administrateur.',
+                'error_type': 'model_not_found'
+            }, status=404)
+        
+        # Gestion des erreurs d'authentification
+        elif '401' in error_str or '403' in error_str or 'unauthorized' in error_str.lower() or 'forbidden' in error_str.lower():
+            return JsonResponse({
+                'success': False,
+                'error': 'Erreur d\'authentification avec l\'API. Veuillez contacter l\'administrateur.',
+                'error_type': 'authentication_error'
+            }, status=401)
+        
+        # Erreur générique
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Une erreur est survenue lors de la communication avec l\'assistant IA. Veuillez réessayer plus tard.',
+                'error_type': 'generic_error'
+            }, status=500)
 
