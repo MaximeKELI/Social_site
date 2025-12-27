@@ -13,35 +13,50 @@
             </div>
             <div class="card-body">
                 {% for conversation in conversations %}
-                    {% for participant in conversation.participants.all %}
-                        {% if participant != user.student_profile %}
-                        <a href="{% url 'conversation_detail' conversation.id %}" class="d-flex align-items-center p-3 border-bottom text-decoration-none text-dark hover-bg">
+                    {% if conversation.is_group_chat and conversation.group %}
+                        <a href="{% url 'group_chat' conversation.group.id %}" class="d-flex align-items-center p-3 border-bottom text-decoration-none text-dark hover-bg">
                             <div class="me-3">
-                                {% if participant.profile_picture %}
-                                    <img src="{{ participant.profile_picture.url }}" class="profile-picture" alt="Profile">
-                                {% else %}
-                                    <i class="bi bi-person-circle" style="font-size: 3rem; color: var(--primary-color);"></i>
-                                {% endif %}
+                                <i class="bi bi-people-fill" style="font-size: 3rem; color: var(--primary-color);"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">{{ participant.full_name }}</h6>
+                                    <h6 class="mb-0">{{ conversation.group.name }}</h6>
                                     <small class="text-muted">{{ conversation.updated_at|timesince }} ago</small>
                                 </div>
-                                {% with last_message=conversation.messages.last %}
-                                    {% if last_message %}
-                                        <p class="text-muted small mb-0 mt-1">
-                                            {{ last_message.content|truncatewords:15 }}
-                                        </p>
-                                    {% endif %}
-                                {% endwith %}
+                                <p class="text-muted small mb-0 mt-1">Chat de groupe</p>
                             </div>
-                            {% if conversation.unread_count > 0 %}
-                                <span class="badge bg-danger rounded-pill ms-3">{{ conversation.unread_count }}</span>
-                            {% endif %}
                         </a>
-                        {% endif %}
-                    {% endfor %}
+                    {% else %}
+                        {% for participant in conversation.participants_students.all %}
+                            {% if participant != user.student_profile %}
+                            <a href="{% url 'conversation_detail' conversation.id %}" class="d-flex align-items-center p-3 border-bottom text-decoration-none text-dark hover-bg">
+                                <div class="me-3">
+                                    {% if participant.profile_picture %}
+                                        <img src="{{ participant.profile_picture.url }}" class="profile-picture" alt="Profile">
+                                    {% else %}
+                                        <i class="bi bi-person-circle" style="font-size: 3rem; color: var(--primary-color);"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">{{ participant.full_name }}</h6>
+                                        <small class="text-muted">{{ conversation.updated_at|timesince }} ago</small>
+                                    </div>
+                                    {% with last_message=conversation.messages.last %}
+                                        {% if last_message %}
+                                            <p class="text-muted small mb-0 mt-1">
+                                                {{ last_message.content|truncatewords:15 }}
+                                            </p>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                                {% if conversation.unread_count > 0 %}
+                                    <span class="badge bg-danger rounded-pill ms-3">{{ conversation.unread_count }}</span>
+                                {% endif %}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                 {% empty %}
                 <div class="text-center py-5">
                     <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>

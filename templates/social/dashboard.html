@@ -169,7 +169,7 @@
             <div class="card-body">
                 <h6 class="mb-3">Conversations récentes</h6>
                 {% for conversation in conversations|slice:":5" %}
-                    {% for participant in conversation.participants.all %}
+                    {% for participant in conversation.participants_students.all %}
                         {% if participant != student %}
                             <a href="{% url 'conversation_detail' conversation.id %}" class="d-flex align-items-center mb-3 text-decoration-none text-dark">
                                 {% if participant.profile_picture %}

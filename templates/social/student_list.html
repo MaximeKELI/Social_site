@@ -49,9 +49,15 @@
                     <a href="{% url 'student_profile' student.id %}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-person"></i> Profil
                     </a>
-                    <a href="{% url 'start_conversation' student.id %}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-chat"></i> Message
-                    </a>
+                    {% if user.student_profile %}
+                        <a href="{% url 'start_conversation' student.id %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-chat"></i> Message
+                        </a>
+                    {% elif user.school_profile %}
+                        <a href="{% url 'school_start_conversation' student.id %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-chat"></i> Message
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

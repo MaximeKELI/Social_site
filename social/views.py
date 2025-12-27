@@ -84,19 +84,19 @@ def dashboard(request):
     posts = Post.objects.filter(school=student.school).order_by('-created_at')[:20]
     
     # Récupérer les conversations de l'étudiant
-    conversations = Conversation.objects.filter(participants=student).order_by('-updated_at')
+    conversations = Conversation.objects.filter(participants_students=student).order_by('-updated_at')
     
     # Calculer le nombre de messages non lus
     unread_messages_count = 0
     for conversation in conversations:
         unread = Message.objects.filter(
             conversation=conversation
-        ).exclude(sender=student).filter(is_read=False).count()
+        ).exclude(sender_student=student).filter(is_read=False).count()
         unread_messages_count += unread
     
     # Calculer le nombre de notifications non lues
     unread_notifications_count = Notification.objects.filter(
-        recipient=student,
+        recipient_student=student,
         is_read=False
     ).count()
     
@@ -104,8 +104,8 @@ def dashboard(request):
         'student': student,
         'posts': posts,
         'conversations': conversations,
-        'unread_messages_count': unread_messages_count,
-        'unread_notifications_count': unread_notifications_count,
+        'unread_messages_count': unread_messages_count or 0,
+        'unread_notifications_count': unread_notifications_count or 0,
     }
     return render(request, 'social/dashboard.html', context)
 
@@ -187,8 +187,8 @@ def post_detail(request, post_id):
             # Créer une notification pour l'auteur du post
             if post.author != request.user.student_profile:
                 Notification.objects.create(
-                    recipient=post.author,
-                    sender=request.user.student_profile,
+                    recipient_student=post.author,
+                    sender_student=request.user.student_profile,
                     notification_type='comment',
                     title='Nouveau commentaire',
                     message=f"{request.user.student_profile.full_name} a commenté votre post: {post.title}",
@@ -228,8 +228,8 @@ def like_post(request, post_id):
         # Créer une notification pour l'auteur du post
         if post.author != student:
             Notification.objects.create(
-                recipient=post.author,
-                sender=student,
+                recipient_student=post.author,
+                sender_student=student,
                 notification_type='like',
                 title='Nouveau like',
                 message=f"{student.full_name} a aimé votre post: {post.title}",
@@ -297,7 +297,7 @@ def start_conversation(request, student_id):
     
     if not conversation:
         conversation = Conversation.objects.create()
-        conversation.participants.add(current_student, other_student)
+        conversation.participants_students.add(current_student, other_student)
     
     return redirect('conversation_detail', conversation_id=conversation.id)
 
@@ -313,7 +313,7 @@ def conversation_detail(request, conversation_id):
     conversation = get_object_or_404(Conversation, id=conversation_id)
     
     # Vérifier que l'étudiant fait partie de la conversation
-    if student not in conversation.participants.all():
+    if student not in conversation.participants_students.all():
         messages.error(request, 'Vous n\'avez pas accès à cette conversation.')
         return redirect('dashboard')
     
@@ -322,14 +322,14 @@ def conversation_detail(request, conversation_id):
         if form.is_valid():
             message = form.save(commit=False)
             message.conversation = conversation
-            message.sender = student
+            message.sender_student = student
             message.save()
             conversation.save()  # Met à jour updated_at
             # Créer une notification pour les autres participants
-            for participant in conversation.participants.exclude(id=student.id):
+            for participant in conversation.participants_students.exclude(id=student.id):
                 Notification.objects.create(
-                    recipient=participant,
-                    sender=student,
+                    recipient_student=participant,
+                    sender_student=student,
                     notification_type='message',
                     title='Nouveau message',
                     message=f"{student.full_name} vous a envoyé un message",
@@ -340,10 +340,10 @@ def conversation_detail(request, conversation_id):
         form = MessageForm()
     
     # Marquer les messages comme lus
-    Message.objects.filter(conversation=conversation).exclude(sender=student).update(is_read=True)
+    Message.objects.filter(conversation=conversation).exclude(sender_student=student).update(is_read=True)
     
     messages_list = Message.objects.filter(conversation=conversation).order_by('created_at')
-    other_participants = conversation.participants.exclude(id=student.id)
+    other_participants = conversation.participants_students.exclude(id=student.id)
     
     context = {
         'conversation': conversation,
@@ -362,13 +362,13 @@ def conversations_list(request):
         return redirect('home')
     
     student = request.user.student_profile
-    conversations = Conversation.objects.filter(participants=student).order_by('-updated_at')
+    conversations = Conversation.objects.filter(participants_students=student).order_by('-updated_at')
     
     # Ajouter le nombre de messages non lus pour chaque conversation
     for conversation in conversations:
         conversation.unread_count = Message.objects.filter(
             conversation=conversation
-        ).exclude(sender=student).filter(is_read=False).count()
+        ).exclude(sender_student=student).filter(is_read=False).count()
     
     context = {
         'conversations': conversations,
@@ -399,23 +399,23 @@ def group_chat(request, group_id):
     )
     
     # S'assurer que l'étudiant est dans les participants
-    if student not in group_chat.participants.all():
-        group_chat.participants.add(student)
+    if student not in group_chat.participants_students.all():
+        group_chat.participants_students.add(student)
     
     if request.method == 'POST':
         form = MessageForm(request.POST)
         if form.is_valid():
             message = form.save(commit=False)
             message.conversation = group_chat
-            message.sender = student
+            message.sender_student = student
             message.save()
             group_chat.save()  # Met à jour updated_at
             
             # Créer des notifications pour les autres membres du groupe
             for member in group.members.exclude(id=student.id):
                 Notification.objects.create(
-                    recipient=member,
-                    sender=student,
+                    recipient_student=member,
+                    sender_student=student,
                     notification_type='message',
                     title='Nouveau message dans le groupe',
                     message=f"{student.full_name} a envoyé un message dans {group.name}",
@@ -427,7 +427,7 @@ def group_chat(request, group_id):
         form = MessageForm()
     
     # Marquer les messages comme lus pour cet étudiant
-    Message.objects.filter(conversation=group_chat).exclude(sender=student).update(is_read=True)
+    Message.objects.filter(conversation=group_chat).exclude(sender_student=student).update(is_read=True)
     
     messages_list = Message.objects.filter(conversation=group_chat).order_by('created_at')
     
@@ -493,7 +493,7 @@ def notifications(request):
         return redirect('home')
     
     student = request.user.student_profile
-    notifications_list = Notification.objects.filter(recipient=student).order_by('-created_at')
+    notifications_list = Notification.objects.filter(recipient_student=student).order_by('-created_at')
     unread_count = notifications_list.filter(is_read=False).count()
     
     # Marquer toutes comme lues
@@ -547,14 +547,14 @@ def group_detail(request, group_id):
             # Ajouter l'étudiant au chat de groupe s'il existe
             group_chat = Conversation.objects.filter(group=group, is_group_chat=True).first()
             if group_chat:
-                group_chat.participants.add(student)
+                group_chat.participants_students.add(student)
             messages.success(request, f'Vous avez rejoint le groupe {group.name} !')
         elif action == 'leave':
             group.members.remove(student)
             # Retirer l'étudiant du chat de groupe
             group_chat = Conversation.objects.filter(group=group, is_group_chat=True).first()
             if group_chat:
-                group_chat.participants.remove(student)
+                group_chat.participants_students.remove(student)
             messages.success(request, f'Vous avez quitté le groupe {group.name}.')
         return redirect('group_detail', group_id=group_id)
     
@@ -590,7 +590,7 @@ def create_group(request):
                 school=student.school,
                 name=name,
                 description=description,
-                creator=student,
+                creator_student=student,
             )
             if 'image' in request.FILES:
                 group.image = request.FILES['image']
@@ -602,7 +602,7 @@ def create_group(request):
                 group=group,
                 is_group_chat=True
             )
-            group_chat.participants.add(student)
+            group_chat.participants_students.add(student)
             
             # Notifier tous les étudiants de la même école
             school_students = Student.objects.filter(
@@ -612,8 +612,8 @@ def create_group(request):
             
             for school_student in school_students:
                 Notification.objects.create(
-                    recipient=school_student,
-                    sender=student,
+                    recipient_student=school_student,
+                    sender_student=student,
                     notification_type='group',
                     title='Nouveau groupe créé',
                     message=f"{student.full_name} a créé un nouveau groupe: {group.name}",
@@ -704,7 +704,7 @@ def create_event(request):
                 location=location,
                 start_date=start_date,
                 end_date=end_date,
-                organizer=student,
+                organizer_student=student,
             )
             if group_id:
                 event.group = Group.objects.get(id=group_id)

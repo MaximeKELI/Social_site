@@ -24,16 +24,16 @@
             </div>
             <div class="card-body" style="height: 500px; overflow-y: auto; background-color: #f8fafc;">
                 {% for message in messages %}
-                <div class="d-flex mb-3 {% if message.sender == user.student_profile %}justify-content-end{% else %}justify-content-start{% endif %}">
-                    <div class="message-bubble {% if message.sender == user.student_profile %}message-sent{% else %}message-received{% endif %}">
-                        {% if message.sender != user.student_profile %}
+                <div class="d-flex mb-3 {% if message.sender_student == user.student_profile %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div class="message-bubble {% if message.sender_student == user.student_profile %}message-sent{% else %}message-received{% endif %}">
+                        {% if message.sender_student != user.student_profile %}
                             <div class="d-flex align-items-center mb-1">
-                                {% if message.sender.profile_picture %}
-                                    <img src="{{ message.sender.profile_picture.url }}" class="profile-picture me-2" style="width: 25px; height: 25px;" alt="Profile">
+                                {% if message.sender_student and message.sender_student.profile_picture %}
+                                    <img src="{{ message.sender_student.profile_picture.url }}" class="profile-picture me-2" style="width: 25px; height: 25px;" alt="Profile">
                                 {% else %}
                                     <i class="bi bi-person-circle me-2" style="font-size: 1.2rem;"></i>
                                 {% endif %}
-                                <span class="small fw-bold">{{ message.sender.full_name }}</span>
+                                <span class="small fw-bold">{{ message.sender_name }}</span>
                             </div>
                         {% endif %}
                         <div>{{ message.content|linebreaks }}</div>

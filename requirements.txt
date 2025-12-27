@@ -2,3 +2,6 @@ Django>=5.2.9
 Pillow>=10.0.0
 factory-boy>=3.3.0
 django-extensions>=4.1.0
+matplotlib>=3.10.0
+reportlab>=4.4.0
+pandas>=2.3.0

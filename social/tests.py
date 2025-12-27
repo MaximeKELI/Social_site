@@ -122,16 +122,16 @@ class ModelTests(TestCase):
     def test_conversation_creation(self):
         """Test de création d'une conversation"""
         conversation = Conversation.objects.create()
-        conversation.participants.add(self.student1, self.student2)
-        self.assertEqual(conversation.participants.count(), 2)
+        conversation.participants_students.add(self.student1, self.student2)
+        self.assertEqual(conversation.participants_students.count(), 2)
     
     def test_message_creation(self):
         """Test de création d'un message"""
         conversation = Conversation.objects.create()
-        conversation.participants.add(self.student1, self.student2)
+        conversation.participants_students.add(self.student1, self.student2)
         message = Message.objects.create(
             conversation=conversation,
-            sender=self.student1,
+            sender_student=self.student1,
             content='Bonjour !'
         )
         self.assertEqual(message.content, 'Bonjour !')
@@ -146,14 +146,14 @@ class ModelTests(TestCase):
             content='Contenu'
         )
         notification = Notification.objects.create(
-            recipient=self.student1,
-            sender=self.student2,
+            recipient_student=self.student1,
+            sender_student=self.student2,
             notification_type='like',
             title='Nouveau like',
             message='Marie Martin a aimé votre post',
             related_post=post
         )
-        self.assertEqual(notification.recipient, self.student1)
+        self.assertEqual(notification.recipient_student, self.student1)
         self.assertFalse(notification.is_read)
     
     def test_group_creation(self):
@@ -162,7 +162,7 @@ class ModelTests(TestCase):
             school=self.school,
             name='Groupe Test',
             description='Description du groupe',
-            creator=self.student1
+            creator_student=self.student1
         )
         group.members.add(self.student1, self.student2)
         self.assertEqual(group.name, 'Groupe Test')
@@ -177,7 +177,7 @@ class ModelTests(TestCase):
             location='Lieu test',
             start_date=timezone.now() + timedelta(days=7),
             end_date=timezone.now() + timedelta(days=7, hours=2),
-            organizer=self.student1
+            organizer_student=self.student1
         )
         event.attendees.add(self.student1, self.student2)
         self.assertEqual(event.title, 'Événement Test')
@@ -479,7 +479,7 @@ class PerformanceTests(TransactionTestCase):
         conversations = []
         for i in range(20):
             conv = Conversation.objects.create()
-            conv.participants.add(self.students[i], self.students[(i+1) % 100])
+            conv.participants_students.add(self.students[i], self.students[(i+1) % 100])
             conversations.append(conv)
         
         # Créer 100 messages
