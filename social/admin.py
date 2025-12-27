@@ -34,7 +34,7 @@ class CommentAdmin(admin.ModelAdmin):
 class ConversationAdmin(admin.ModelAdmin):
     list_display = ('id', 'group', 'is_group_chat', 'created_at', 'updated_at')
     list_filter = ('is_group_chat', 'created_at')
-    filter_horizontal = ('participants',)
+    filter_horizontal = ('participants_students', 'participants_schools')
     search_fields = ('group__name',)
 
 

@@ -58,12 +58,19 @@ class Student(models.Model):
 
 
 class Conversation(models.Model):
-    """Modèle pour les conversations entre étudiants"""
-    participants = models.ManyToManyField(Student, related_name='conversations', verbose_name="Participants")
+    """Modèle pour les conversations entre étudiants et/ou écoles"""
+    participants_students = models.ManyToManyField(Student, related_name='conversations', blank=True, verbose_name="Participants étudiants")
+    participants_schools = models.ManyToManyField(School, related_name='conversations', blank=True, verbose_name="Participants écoles")
     group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True, related_name='group_chat', verbose_name="Groupe")
     is_group_chat = models.BooleanField(default=False, verbose_name="Chat de groupe")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Dernière mise à jour")
+    
+    @property
+    def participants(self):
+        """Retourne tous les participants (étudiants et écoles)"""
+        from itertools import chain
+        return list(chain(self.participants_students.all(), self.participants_schools.all()))
     
     class Meta:
         verbose_name = "Conversation"
@@ -80,10 +87,25 @@ class Conversation(models.Model):
 class Message(models.Model):
     """Modèle pour les messages dans les conversations"""
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages', verbose_name="Conversation")
-    sender = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_messages', verbose_name="Expéditeur")
+    sender_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_messages', null=True, blank=True, verbose_name="Expéditeur étudiant")
+    sender_school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='sent_messages', null=True, blank=True, verbose_name="Expéditeur école")
     content = models.TextField(verbose_name="Contenu")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date d'envoi")
     is_read = models.BooleanField(default=False, verbose_name="Lu")
+    
+    @property
+    def sender(self):
+        """Retourne l'expéditeur (étudiant ou école)"""
+        return self.sender_student or self.sender_school
+    
+    @property
+    def sender_name(self):
+        """Retourne le nom de l'expéditeur"""
+        if self.sender_student:
+            return self.sender_student.full_name
+        elif self.sender_school:
+            return self.sender_school.name
+        return "Inconnu"
     
     class Meta:
         verbose_name = "Message"
@@ -142,18 +164,32 @@ class Notification(models.Model):
         ('message', 'Nouveau message'),
         ('post', 'Nouveau post'),
         ('group', 'Nouveau groupe'),
+        ('event', 'Nouvel événement'),
     ]
     
-    recipient = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='notifications', verbose_name="Destinataire")
-    sender = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True, verbose_name="Expéditeur")
+    recipient_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True, verbose_name="Destinataire étudiant")
+    recipient_school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True, verbose_name="Destinataire école")
+    sender_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True, verbose_name="Expéditeur étudiant")
+    sender_school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True, verbose_name="Expéditeur école")
     notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, verbose_name="Type")
     title = models.CharField(max_length=200, verbose_name="Titre")
     message = models.TextField(verbose_name="Message")
     related_post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Post lié")
     related_message = models.ForeignKey(Message, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Message lié")
     related_group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True, verbose_name="Groupe lié")
+    related_event = models.ForeignKey('Event', on_delete=models.CASCADE, null=True, blank=True, verbose_name="Événement lié")
     is_read = models.BooleanField(default=False, verbose_name="Lu")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    
+    @property
+    def recipient(self):
+        """Retourne le destinataire (étudiant ou école)"""
+        return self.recipient_student or self.recipient_school
+    
+    @property
+    def sender(self):
+        """Retourne l'expéditeur (étudiant ou école)"""
+        return self.sender_student or self.sender_school
     
     class Meta:
         verbose_name = "Notification"
@@ -170,10 +206,16 @@ class Group(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nom du groupe")
     description = models.TextField(verbose_name="Description")
     image = models.ImageField(upload_to='group_images/', blank=True, null=True, verbose_name="Image")
-    creator = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='created_groups', verbose_name="Créateur")
+    creator_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='created_groups', null=True, blank=True, verbose_name="Créateur étudiant")
+    creator_school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='created_groups', null=True, blank=True, verbose_name="Créateur école")
     members = models.ManyToManyField(Student, related_name='groups', verbose_name="Membres")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     is_active = models.BooleanField(default=True, verbose_name="Active")
+    
+    @property
+    def creator(self):
+        """Retourne le créateur (étudiant ou école)"""
+        return self.creator_student or self.creator_school
     
     class Meta:
         verbose_name = "Groupe"
@@ -198,9 +240,15 @@ class Event(models.Model):
     start_date = models.DateTimeField(verbose_name="Date de début")
     end_date = models.DateTimeField(verbose_name="Date de fin")
     image = models.ImageField(upload_to='event_images/', blank=True, null=True, verbose_name="Image")
-    organizer = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='organized_events', verbose_name="Organisateur")
+    organizer_student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='organized_events', null=True, blank=True, verbose_name="Organisateur étudiant")
+    organizer_school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='organized_events', null=True, blank=True, verbose_name="Organisateur école")
     attendees = models.ManyToManyField(Student, related_name='attended_events', blank=True, verbose_name="Participants")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    
+    @property
+    def organizer(self):
+        """Retourne l'organisateur (étudiant ou école)"""
+        return self.organizer_student or self.organizer_school
     
     class Meta:
         verbose_name = "Événement"
