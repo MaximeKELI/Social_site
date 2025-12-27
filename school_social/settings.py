@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "social.security.SecurityMiddleware",  # Middleware de sécurité personnalisé
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -132,3 +133,91 @@ LOGOUT_REDIRECT_URL = "home"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ============================================
+# CONFIGURATIONS DE SÉCURITÉ RENFORCÉES
+# ============================================
+
+# Protection CSRF renforcée
+CSRF_COOKIE_SECURE = False  # Mettre à True en production avec HTTPS
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_USE_SESSIONS = True  # Utiliser les sessions pour stocker le token CSRF
+
+# Sécurisation des sessions
+SESSION_COOKIE_SECURE = False  # Mettre à True en production avec HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_AGE = 3600  # 1 heure
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True  # Renouveler la session à chaque requête
+
+# Headers de sécurité (complémentaires au middleware)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Protection contre les attaques de clickjacking
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Configuration du logging pour la sécurité
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'security': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'security.log',
+            'formatter': 'security',
+        },
+        'console': {
+            'level': 'WARNING',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'security': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
+
+# Créer le dossier logs s'il n'existe pas
+import os
+logs_dir = BASE_DIR / 'logs'
+if not logs_dir.exists():
+    os.makedirs(logs_dir, exist_ok=True)
+
+# Limites de sécurité
+SECURITY_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+SECURITY_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+SECURITY_RATE_LIMIT_LOGIN = 5  # Tentatives de connexion par minute
+SECURITY_RATE_LIMIT_POST = 30  # Requêtes POST par minute
+SECURITY_RATE_LIMIT_GET = 100  # Requêtes GET par minute
+
+# Protection contre les attaques de force brute
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Désactiver l'exposition des informations sensibles dans les erreurs
+DEBUG_PROPAGATE_EXCEPTIONS = False

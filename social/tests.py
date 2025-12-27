@@ -456,8 +456,8 @@ class PerformanceTests(TransactionTestCase):
         notifications = []
         for i in range(100):
             notification = Notification.objects.create(
-                recipient=self.students[i],
-                sender=self.students[(i+1) % 100],
+                recipient_student=self.students[i],
+                sender_student=self.students[(i+1) % 100],
                 notification_type='like',
                 title='Nouveau like',
                 message=f'Notification {i}',
@@ -487,7 +487,7 @@ class PerformanceTests(TransactionTestCase):
         for i in range(100):
             Message.objects.create(
                 conversation=conversations[i % 20],
-                sender=self.students[i % 100],
+                sender_student=self.students[i % 100],
                 content=f'Message {i}'
             )
         end_time = time.time()
@@ -644,7 +644,7 @@ class RealWorldScenarioTests(TransactionTestCase):
         self.assertTrue(Comment.objects.filter(post=post).exists())
         
         # Vérifier les notifications
-        notifications = Notification.objects.filter(recipient=student1)
+        notifications = Notification.objects.filter(recipient_student=student1)
         self.assertTrue(notifications.exists())
         
         print("✓ Scénario d'interaction sociale réussi")
@@ -659,7 +659,7 @@ class RealWorldScenarioTests(TransactionTestCase):
             school=self.school,
             name='Groupe de Test',
             description='Description',
-            creator=student
+            creator_student=student
         )
         group.members.add(student)
         
@@ -672,7 +672,7 @@ class RealWorldScenarioTests(TransactionTestCase):
             location='Lieu',
             start_date=timezone.now() + timedelta(days=7),
             end_date=timezone.now() + timedelta(days=7, hours=2),
-            organizer=student
+            organizer_student=student
         )
         
         # Ajouter des participants

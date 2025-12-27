@@ -6,8 +6,11 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.core.cache import cache
+from django.conf import settings
 from .models import School, Student, Post, Comment, Conversation, Message, Notification, Group, Event
 from .forms import SchoolRegistrationForm, StudentRegistrationForm, PostForm, CommentForm, MessageForm
+from .security import log_security_event, constant_time_compare, sanitize_input
 
 
 def home(request):
@@ -49,20 +52,52 @@ def register_student(request):
 
 
 def login_view(request):
-    """Vue de connexion personnalisée"""
+    """Vue de connexion personnalisée avec protection renforcée"""
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        # Nettoyer les entrées
+        username = sanitize_input(request.POST.get('username', ''), max_length=150)
+        password = request.POST.get('password', '')
+        
+        # Vérifier le rate limiting pour cette IP
+        ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+        cache_key = f'login_attempts_{ip}'
+        attempts = cache.get(cache_key, 0)
+        max_attempts = getattr(settings, 'SECURITY_RATE_LIMIT_LOGIN', 5)
+        
+        if attempts >= max_attempts:
+            log_security_event('login_rate_limit_exceeded', request, {
+                'ip': ip,
+                'username': username
+            })
+            messages.error(request, 'Trop de tentatives de connexion. Veuillez réessayer dans quelques minutes.')
+            return render(request, 'social/login.html')
+        
+        # Authentification avec protection contre les attaques de timing
         user = authenticate(request, username=username, password=password)
+        
         if user is not None:
+            # Connexion réussie
+            cache.delete(cache_key)  # Réinitialiser les tentatives
             login(request, user)
+            log_security_event('login_success', request, {
+                'username': username,
+                'user_type': 'student' if hasattr(user, 'student_profile') else 'school'
+            })
+            
             if hasattr(user, 'student_profile'):
                 return redirect('dashboard')
             elif hasattr(user, 'school_profile'):
                 return redirect('school_dashboard')
             return redirect('home')
         else:
+            # Échec de connexion
+            cache.set(cache_key, attempts + 1, 300)  # 5 minutes
+            log_security_event('login_failed', request, {
+                'username': username,
+                'attempts': attempts + 1
+            })
             messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect.')
+    
     return render(request, 'social/login.html')
 
 
@@ -148,12 +183,21 @@ def school_dashboard(request):
 
 @login_required
 def create_post(request):
-    """Créer un nouveau post"""
+    """Créer un nouveau post avec validation de sécurité"""
     if not hasattr(request.user, 'student_profile'):
+        log_security_event('unauthorized_access_attempt', request, {
+            'view': 'create_post',
+            'user_type': 'unknown'
+        })
         messages.error(request, 'Seuls les étudiants peuvent créer des posts.')
         return redirect('dashboard')
     
     student = request.user.student_profile
+    
+    # Vérifier que l'étudiant est actif
+    if not student.is_active:
+        messages.error(request, 'Votre compte est désactivé.')
+        return redirect('home')
     
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
@@ -162,8 +206,12 @@ def create_post(request):
             post.school = student.school
             post.author = student
             post.save()
-            # Créer des notifications pour les étudiants de la même école (optionnel)
-            # On peut limiter cela pour éviter trop de notifications
+            
+            log_security_event('post_created', request, {
+                'post_id': post.id,
+                'author': student.user.username
+            })
+            
             messages.success(request, 'Post créé avec succès !')
             return redirect('dashboard')
     else:
@@ -212,12 +260,30 @@ def post_detail(request, post_id):
 @login_required
 @require_POST
 def like_post(request, post_id):
-    """Liker/unliker un post"""
+    """Liker/unliker un post avec validation de sécurité"""
     if not hasattr(request.user, 'student_profile'):
+        log_security_event('unauthorized_access_attempt', request, {
+            'view': 'like_post',
+            'post_id': post_id
+        })
         return JsonResponse({'error': 'Accès refusé'}, status=403)
+    
+    # Validation de l'ID du post (protection contre les injections)
+    try:
+        post_id = int(post_id)
+    except (ValueError, TypeError):
+        log_security_event('invalid_input', request, {
+            'view': 'like_post',
+            'post_id': post_id
+        })
+        return JsonResponse({'error': 'ID de post invalide.'}, status=400)
     
     post = get_object_or_404(Post, id=post_id)
     student = request.user.student_profile
+    
+    # Vérifier que l'étudiant est actif
+    if not student.is_active:
+        return JsonResponse({'error': 'Compte désactivé.'}, status=403)
     
     if post.likes.filter(id=student.id).exists():
         post.likes.remove(student)
@@ -249,8 +315,8 @@ def student_list(request):
     student = request.user.student_profile
     students = Student.objects.filter(school=student.school, is_active=True).exclude(id=student.id)
     
-    # Recherche
-    search_query = request.GET.get('search', '')
+    # Recherche avec validation de sécurité
+    search_query = sanitize_input(request.GET.get('search', ''), max_length=100)
     if search_query:
         students = students.filter(
             Q(first_name__icontains=search_query) |
@@ -442,26 +508,63 @@ def group_chat(request, group_id):
 
 @login_required
 def edit_profile(request):
-    """Éditer le profil de l'étudiant"""
+    """Éditer le profil de l'étudiant avec validation de sécurité"""
     if not hasattr(request.user, 'student_profile'):
+        log_security_event('unauthorized_access_attempt', request, {
+            'view': 'edit_profile'
+        })
         messages.error(request, 'Accès réservé aux étudiants.')
         return redirect('home')
     
     student = request.user.student_profile
     
+    # Vérifier que l'étudiant est actif
+    if not student.is_active:
+        messages.error(request, 'Votre compte est désactivé.')
+        return redirect('home')
+    
     if request.method == 'POST':
-        student.first_name = request.POST.get('first_name', student.first_name)
-        student.last_name = request.POST.get('last_name', student.last_name)
-        student.email = request.POST.get('email', student.email)
-        student.phone = request.POST.get('phone', student.phone)
-        student.graduation_year = request.POST.get('graduation_year') or None
-        student.status = request.POST.get('status', student.status)
-        student.bio = request.POST.get('bio', student.bio)
+        # Nettoyer et valider toutes les entrées
+        student.first_name = sanitize_input(request.POST.get('first_name', student.first_name), max_length=100)
+        student.last_name = sanitize_input(request.POST.get('last_name', student.last_name), max_length=100)
+        student.email = sanitize_input(request.POST.get('email', student.email), max_length=200)
+        student.phone = sanitize_input(request.POST.get('phone', student.phone), max_length=20)
         
+        graduation_year = request.POST.get('graduation_year')
+        if graduation_year:
+            try:
+                student.graduation_year = int(graduation_year)
+            except (ValueError, TypeError):
+                pass  # Garder la valeur existante si invalide
+        
+        student.status = request.POST.get('status', student.status)
+        student.bio = sanitize_input(request.POST.get('bio', student.bio), max_length=500)
+        
+        # Valider l'image uploadée
         if 'profile_picture' in request.FILES:
-            student.profile_picture = request.FILES['profile_picture']
+            from .security import validate_file_upload
+            from django.conf import settings
+            from django.core.exceptions import ValidationError
+            
+            profile_picture = request.FILES['profile_picture']
+            is_valid, error = validate_file_upload(
+                profile_picture,
+                allowed_types=getattr(settings, 'SECURITY_ALLOWED_IMAGE_TYPES', None),
+                max_size=getattr(settings, 'SECURITY_MAX_FILE_SIZE', 5*1024*1024),
+                is_image=True
+            )
+            if is_valid:
+                student.profile_picture = profile_picture
+            else:
+                messages.error(request, f"Erreur d'upload: {error}")
+                return redirect('edit_profile')
         
         student.save()
+        
+        log_security_event('profile_updated', request, {
+            'student_id': student.id
+        })
+        
         messages.success(request, 'Profil mis à jour avec succès !')
         return redirect('student_profile', student_id=student.id)
     

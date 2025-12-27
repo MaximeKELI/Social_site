@@ -1,7 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.conf import settings
 from .models import School, Student, Post, Comment, Message
+from .security import validate_file_upload, sanitize_input
 
 
 class SchoolRegistrationForm(UserCreationForm):
@@ -25,6 +28,41 @@ class SchoolRegistrationForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         self.fields['password1'].widget.attrs.update({'class': 'form-control'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+    
+    def clean_name(self):
+        """Valide et nettoie le nom de l'école"""
+        name = self.cleaned_data.get('name')
+        if name:
+            name = sanitize_input(name, max_length=200)
+        return name
+    
+    def clean_address(self):
+        """Valide et nettoie l'adresse"""
+        address = self.cleaned_data.get('address')
+        if address:
+            address = sanitize_input(address, max_length=500)
+        return address
+    
+    def clean_description(self):
+        """Valide et nettoie la description"""
+        description = self.cleaned_data.get('description')
+        if description:
+            description = sanitize_input(description, max_length=1000)
+        return description
+    
+    def clean_logo(self):
+        """Valide le logo uploadé"""
+        logo = self.cleaned_data.get('logo')
+        if logo:
+            is_valid, error = validate_file_upload(
+                logo,
+                allowed_types=getattr(settings, 'SECURITY_ALLOWED_IMAGE_TYPES', None),
+                max_size=getattr(settings, 'SECURITY_MAX_FILE_SIZE', 5*1024*1024),
+                is_image=True
+            )
+            if not is_valid:
+                raise ValidationError(error)
+        return logo
     
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -69,6 +107,41 @@ class StudentRegistrationForm(UserCreationForm):
         self.fields['password1'].widget.attrs.update({'class': 'form-control'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control'})
     
+    def clean_first_name(self):
+        """Valide et nettoie le prénom"""
+        first_name = self.cleaned_data.get('first_name')
+        if first_name:
+            first_name = sanitize_input(first_name, max_length=100)
+        return first_name
+    
+    def clean_last_name(self):
+        """Valide et nettoie le nom"""
+        last_name = self.cleaned_data.get('last_name')
+        if last_name:
+            last_name = sanitize_input(last_name, max_length=100)
+        return last_name
+    
+    def clean_bio(self):
+        """Valide et nettoie la biographie"""
+        bio = self.cleaned_data.get('bio')
+        if bio:
+            bio = sanitize_input(bio, max_length=500)
+        return bio
+    
+    def clean_profile_picture(self):
+        """Valide la photo de profil uploadée"""
+        profile_picture = self.cleaned_data.get('profile_picture')
+        if profile_picture:
+            is_valid, error = validate_file_upload(
+                profile_picture,
+                allowed_types=getattr(settings, 'SECURITY_ALLOWED_IMAGE_TYPES', None),
+                max_size=getattr(settings, 'SECURITY_MAX_FILE_SIZE', 5*1024*1024),
+                is_image=True
+            )
+            if not is_valid:
+                raise ValidationError(error)
+        return profile_picture
+    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
@@ -106,6 +179,34 @@ class PostForm(forms.ModelForm):
             'content': 'Contenu',
             'image': 'Image',
         }
+    
+    def clean_title(self):
+        """Valide et nettoie le titre"""
+        title = self.cleaned_data.get('title')
+        if title:
+            title = sanitize_input(title, max_length=200)
+        return title
+    
+    def clean_content(self):
+        """Valide et nettoie le contenu"""
+        content = self.cleaned_data.get('content')
+        if content:
+            content = sanitize_input(content, max_length=5000)
+        return content
+    
+    def clean_image(self):
+        """Valide l'image uploadée"""
+        image = self.cleaned_data.get('image')
+        if image:
+            is_valid, error = validate_file_upload(
+                image,
+                allowed_types=getattr(settings, 'SECURITY_ALLOWED_IMAGE_TYPES', None),
+                max_size=getattr(settings, 'SECURITY_MAX_FILE_SIZE', 5*1024*1024),
+                is_image=True
+            )
+            if not is_valid:
+                raise ValidationError(error)
+        return image
 
 
 class CommentForm(forms.ModelForm):
@@ -119,6 +220,13 @@ class CommentForm(forms.ModelForm):
         labels = {
             'content': '',
         }
+    
+    def clean_content(self):
+        """Valide et nettoie le contenu du commentaire"""
+        content = self.cleaned_data.get('content')
+        if content:
+            content = sanitize_input(content, max_length=1000)
+        return content
 
 
 class MessageForm(forms.ModelForm):
@@ -132,5 +240,12 @@ class MessageForm(forms.ModelForm):
         labels = {
             'content': '',
         }
+    
+    def clean_content(self):
+        """Valide et nettoie le contenu du message"""
+        content = self.cleaned_data.get('content')
+        if content:
+            content = sanitize_input(content, max_length=2000)
+        return content
 
 
