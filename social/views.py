@@ -142,6 +142,16 @@ def post_detail(request, post_id):
             comment.post = post
             comment.author = request.user.student_profile
             comment.save()
+            # Créer une notification pour l'auteur du post
+            if post.author != request.user.student_profile:
+                Notification.objects.create(
+                    recipient=post.author,
+                    sender=request.user.student_profile,
+                    notification_type='comment',
+                    title='Nouveau commentaire',
+                    message=f"{request.user.student_profile.full_name} a commenté votre post: {post.title}",
+                    related_post=post
+                )
             messages.success(request, 'Commentaire ajouté !')
             return redirect('post_detail', post_id=post_id)
     else:
