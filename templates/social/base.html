@@ -224,6 +224,11 @@
                                     {% endif %}
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'chatbot' %}">
+                                    <i class="bi bi-robot"></i> Assistant IA
+                                </a>
+                            </li>
                         {% elif user.school_profile %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'school_dashboard' %}">
@@ -259,6 +264,11 @@
                                     {% if unread_notifications_count > 0 %}
                                         <span class="badge bg-danger rounded-pill ms-1">{{ unread_notifications_count }}</span>
                                     {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'chatbot' %}">
+                                    <i class="bi bi-robot"></i> Assistant IA
                                 </a>
                             </li>
                         {% endif %}
