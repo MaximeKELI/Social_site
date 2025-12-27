@@ -66,8 +66,17 @@ def chatbot_api(request):
             school = request.user.school_profile
             user_context = f"L'utilisateur est une école nommée {school.name}."
         
-        # Créer le modèle Gemini
-        model = genai.GenerativeModel('gemini-pro')
+        # Créer le modèle Gemini (utiliser gemini-1.5-flash qui est plus rapide et gratuit)
+        # Alternatives: 'gemini-1.5-pro', 'gemini-1.5-flash'
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+        except Exception:
+            # Fallback vers gemini-1.5-pro si flash n'est pas disponible
+            try:
+                model = genai.GenerativeModel('gemini-1.5-pro')
+            except Exception:
+                # Dernier fallback vers gemini-pro
+                model = genai.GenerativeModel('gemini-pro')
         
         # Construire le prompt avec contexte
         system_prompt = """Tu es un assistant IA intelligent et bienveillant pour une plateforme sociale scolaire.
