@@ -32,8 +32,10 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created_at', 'updated_at')
+    list_display = ('id', 'group', 'is_group_chat', 'created_at', 'updated_at')
+    list_filter = ('is_group_chat', 'created_at')
     filter_horizontal = ('participants',)
+    search_fields = ('group__name',)
 
 
 @admin.register(Message)
@@ -45,7 +47,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('recipient', 'notification_type', 'title', 'is_read', 'created_at')
+    list_display = ('recipient', 'notification_type', 'title', 'related_group', 'is_read', 'created_at')
     list_filter = ('notification_type', 'is_read', 'created_at')
     search_fields = ('title', 'message')
 

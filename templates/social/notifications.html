@@ -29,6 +29,8 @@
                             <i class="bi bi-chat-fill text-primary" style="font-size: 1.5rem;"></i>
                         {% elif notification.notification_type == 'message' %}
                             <i class="bi bi-envelope-fill text-info" style="font-size: 1.5rem;"></i>
+                        {% elif notification.notification_type == 'group' %}
+                            <i class="bi bi-people-fill text-success" style="font-size: 1.5rem;"></i>
                         {% else %}
                             <i class="bi bi-bell-fill text-warning" style="font-size: 1.5rem;"></i>
                         {% endif %}
@@ -41,6 +43,12 @@
                             <div class="mt-2">
                                 <a href="{% url 'post_detail' notification.related_post.id %}" class="btn btn-sm btn-outline-primary">
                                     Voir le post
+                                </a>
+                            </div>
+                        {% elif notification.related_group %}
+                            <div class="mt-2">
+                                <a href="{% url 'group_detail' notification.related_group.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-people"></i> Voir le groupe
                                 </a>
                             </div>
                         {% endif %}
