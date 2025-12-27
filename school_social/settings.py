@@ -225,3 +225,6 @@ AUTHENTICATION_BACKENDS = [
 
 # Désactiver l'exposition des informations sensibles dans les erreurs
 DEBUG_PROPAGATE_EXCEPTIONS = False
+
+# Configuration API Google Gemini pour le chatbot IA
+GOOGLE_AI_API_KEY = "AIzaSyCXPLqmAKAVq1TXlevjQqvzzfTfobR0ho4"

@@ -5,16 +5,19 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-import google.generativeai as genai
 import json
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Configuration de l'API Google Gemini
-genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
+# Import de l'API Google Gemini (déprécié mais fonctionnel)
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    logger.warning("google-generativeai n'est pas installé")
 
 
 @login_required
@@ -27,7 +30,16 @@ def chatbot_view(request):
 @require_POST
 def chatbot_api(request):
     """API endpoint pour interagir avec le chatbot"""
+    if not GEMINI_AVAILABLE:
+        return JsonResponse({
+            'success': False,
+            'error': 'Le service de chatbot n\'est pas disponible.'
+        }, status=503)
+    
     try:
+        # Configuration de l'API (faite ici pour éviter les erreurs d'import)
+        genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
+        
         # Récupérer le message de l'utilisateur
         data = json.loads(request.body)
         user_message = data.get('message', '').strip()
