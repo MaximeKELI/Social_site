@@ -1,0 +1,75 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Éditer mon profil - School Social{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <h3 class="mb-4">
+                    <i class="bi bi-person-gear"></i> Éditer mon profil
+                </h3>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ student.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ student.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ student.email }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Téléphone</label>
+                            <input type="text" class="form-control" id="phone" name="phone" value="{{ student.phone }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Statut</label>
+                            <select class="form-control" id="status" name="status">
+                                <option value="current" {% if student.status == 'current' %}selected{% endif %}>Étudiant actuel</option>
+                                <option value="alumni" {% if student.status == 'alumni' %}selected{% endif %}>Ancien étudiant</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="graduation_year" class="form-label">Année de diplôme</label>
+                            <input type="number" class="form-control" id="graduation_year" name="graduation_year" value="{{ student.graduation_year }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile_picture" class="form-label">Photo de profil</label>
+                        {% if student.profile_picture %}
+                            <div class="mb-2">
+                                <img src="{{ student.profile_picture.url }}" class="profile-picture" style="width: 100px; height: 100px;" alt="Current profile">
+                            </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Biographie</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="4">{{ student.bio }}</textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Enregistrer
+                        </button>
+                        <a href="{% url 'student_profile' student.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

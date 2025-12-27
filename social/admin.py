@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import School, Student, Post, Comment, Conversation, Message
+from .models import School, Student, Post, Comment, Conversation, Message, Notification, Group, Event
 
 
 @admin.register(School)
@@ -41,3 +41,26 @@ class MessageAdmin(admin.ModelAdmin):
     list_display = ('sender', 'conversation', 'created_at', 'is_read')
     list_filter = ('is_read', 'created_at')
     search_fields = ('content',)
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'notification_type', 'title', 'is_read', 'created_at')
+    list_filter = ('notification_type', 'is_read', 'created_at')
+    search_fields = ('title', 'message')
+
+
+@admin.register(Group)
+class GroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'school', 'creator', 'member_count', 'created_at', 'is_active')
+    list_filter = ('school', 'is_active', 'created_at')
+    search_fields = ('name', 'description')
+    filter_horizontal = ('members',)
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('title', 'school', 'organizer', 'start_date', 'end_date', 'attendee_count')
+    list_filter = ('school', 'start_date', 'created_at')
+    search_fields = ('title', 'description', 'location')
+    filter_horizontal = ('attendees',)

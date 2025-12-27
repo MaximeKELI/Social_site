@@ -184,6 +184,21 @@
                                     <i class="bi bi-chat-dots"></i> Messages
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'groups_list' %}">
+                                    <i class="bi bi-people-fill"></i> Groupes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'events_list' %}">
+                                    <i class="bi bi-calendar-event"></i> Événements
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'notifications' %}">
+                                    <i class="bi bi-bell"></i> Notifications
+                                </a>
+                            </li>
                         {% elif user.school_profile %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'school_dashboard' %}">
@@ -256,4 +271,5 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
 

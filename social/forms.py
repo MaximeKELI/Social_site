@@ -133,3 +133,4 @@ class MessageForm(forms.ModelForm):
             'content': '',
         }
 
+

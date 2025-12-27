@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from .models import School, Student, Post, Comment, Conversation, Message
+from django.utils import timezone
+from .models import School, Student, Post, Comment, Conversation, Message, Notification, Group, Event
 from .forms import SchoolRegistrationForm, StudentRegistrationForm, PostForm, CommentForm, MessageForm
 
 
@@ -301,3 +302,249 @@ def conversations_list(request):
         'conversations': conversations,
     }
     return render(request, 'social/conversations_list.html', context)
+
+
+@login_required
+def edit_profile(request):
+    """Éditer le profil de l'étudiant"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    
+    if request.method == 'POST':
+        student.first_name = request.POST.get('first_name', student.first_name)
+        student.last_name = request.POST.get('last_name', student.last_name)
+        student.email = request.POST.get('email', student.email)
+        student.phone = request.POST.get('phone', student.phone)
+        student.graduation_year = request.POST.get('graduation_year') or None
+        student.status = request.POST.get('status', student.status)
+        student.bio = request.POST.get('bio', student.bio)
+        
+        if 'profile_picture' in request.FILES:
+            student.profile_picture = request.FILES['profile_picture']
+        
+        student.save()
+        messages.success(request, 'Profil mis à jour avec succès !')
+        return redirect('student_profile', student_id=student.id)
+    
+    return render(request, 'social/edit_profile.html', {'student': student})
+
+
+@login_required
+@require_POST
+def delete_post(request, post_id):
+    """Supprimer un post"""
+    if not hasattr(request.user, 'student_profile'):
+        return JsonResponse({'error': 'Accès refusé'}, status=403)
+    
+    post = get_object_or_404(Post, id=post_id)
+    
+    if post.author != request.user.student_profile:
+        return JsonResponse({'error': 'Vous ne pouvez supprimer que vos propres posts'}, status=403)
+    
+    post.delete()
+    messages.success(request, 'Post supprimé avec succès !')
+    return redirect('dashboard')
+
+
+@login_required
+def notifications(request):
+    """Liste des notifications"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    notifications_list = Notification.objects.filter(recipient=student).order_by('-created_at')
+    unread_count = notifications_list.filter(is_read=False).count()
+    
+    # Marquer toutes comme lues
+    if request.GET.get('mark_read') == 'true':
+        notifications_list.update(is_read=True)
+        return redirect('notifications')
+    
+    context = {
+        'notifications': notifications_list,
+        'unread_count': unread_count,
+    }
+    return render(request, 'social/notifications.html', context)
+
+
+@login_required
+def groups_list(request):
+    """Liste des groupes"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    groups = Group.objects.filter(school=student.school, is_active=True)
+    
+    search_query = request.GET.get('search', '')
+    if search_query:
+        groups = groups.filter(name__icontains=search_query)
+    
+    context = {
+        'groups': groups,
+        'search_query': search_query,
+    }
+    return render(request, 'social/groups_list.html', context)
+
+
+@login_required
+def group_detail(request, group_id):
+    """Détails d'un groupe"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    group = get_object_or_404(Group, id=group_id)
+    is_member = group.members.filter(id=student.id).exists()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'join':
+            group.members.add(student)
+            messages.success(request, f'Vous avez rejoint le groupe {group.name} !')
+        elif action == 'leave':
+            group.members.remove(student)
+            messages.success(request, f'Vous avez quitté le groupe {group.name}.')
+        return redirect('group_detail', group_id=group_id)
+    
+    posts = Post.objects.filter(author__in=group.members.all(), school=group.school).order_by('-created_at')[:10]
+    events = Event.objects.filter(group=group).order_by('start_date')
+    
+    context = {
+        'group': group,
+        'is_member': is_member,
+        'posts': posts,
+        'events': events,
+    }
+    return render(request, 'social/group_detail.html', context)
+
+
+@login_required
+def create_group(request):
+    """Créer un nouveau groupe"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        
+        if name and description:
+            group = Group.objects.create(
+                school=student.school,
+                name=name,
+                description=description,
+                creator=student,
+            )
+            if 'image' in request.FILES:
+                group.image = request.FILES['image']
+            group.members.add(student)
+            group.save()
+            messages.success(request, 'Groupe créé avec succès !')
+            return redirect('group_detail', group_id=group.id)
+        else:
+            messages.error(request, 'Veuillez remplir tous les champs requis.')
+    
+    return render(request, 'social/create_group.html')
+
+
+@login_required
+def events_list(request):
+    """Liste des événements"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    events = Event.objects.filter(school=student.school).order_by('start_date')
+    
+    filter_type = request.GET.get('filter', 'all')
+    if filter_type == 'upcoming':
+        events = events.filter(start_date__gte=timezone.now())
+    elif filter_type == 'past':
+        events = events.filter(start_date__lt=timezone.now())
+    
+    context = {
+        'events': events,
+        'filter_type': filter_type,
+    }
+    return render(request, 'social/events_list.html', context)
+
+
+@login_required
+def event_detail(request, event_id):
+    """Détails d'un événement"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    event = get_object_or_404(Event, id=event_id)
+    is_attending = event.attendees.filter(id=student.id).exists()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'attend':
+            event.attendees.add(student)
+            messages.success(request, 'Vous participez maintenant à cet événement !')
+        elif action == 'unattend':
+            event.attendees.remove(student)
+            messages.success(request, 'Vous ne participez plus à cet événement.')
+        return redirect('event_detail', event_id=event_id)
+    
+    context = {
+        'event': event,
+        'is_attending': is_attending,
+    }
+    return render(request, 'social/event_detail.html', context)
+
+
+@login_required
+def create_event(request):
+    """Créer un nouvel événement"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        location = request.POST.get('location')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        group_id = request.POST.get('group')
+        
+        if title and description and location and start_date and end_date:
+            event = Event.objects.create(
+                school=student.school,
+                title=title,
+                description=description,
+                location=location,
+                start_date=start_date,
+                end_date=end_date,
+                organizer=student,
+            )
+            if group_id:
+                event.group = Group.objects.get(id=group_id)
+            if 'image' in request.FILES:
+                event.image = request.FILES['image']
+            event.save()
+            messages.success(request, 'Événement créé avec succès !')
+            return redirect('event_detail', event_id=event.id)
+        else:
+            messages.error(request, 'Veuillez remplir tous les champs requis.')
+    
+    groups = Group.objects.filter(school=student.school, is_active=True)
+    return render(request, 'social/create_event.html', {'groups': groups})

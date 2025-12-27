@@ -26,5 +26,23 @@ urlpatterns = [
     path('conversations/', views.conversations_list, name='conversations_list'),
     path('conversation/<int:conversation_id>/', views.conversation_detail, name='conversation_detail'),
     path('conversation/start/<int:student_id>/', views.start_conversation, name='start_conversation'),
+    
+    # Profile
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('post/<int:post_id>/delete/', views.delete_post, name='delete_post'),
+    
+    # Notifications
+    path('notifications/', views.notifications, name='notifications'),
+    
+    # Groups
+    path('groups/', views.groups_list, name='groups_list'),
+    path('group/<int:group_id>/', views.group_detail, name='group_detail'),
+    path('group/create/', views.create_group, name='create_group'),
+    
+    # Events
+    path('events/', views.events_list, name='events_list'),
+    path('event/<int:event_id>/', views.event_detail, name='event_detail'),
+    path('event/create/', views.create_event, name='create_event'),
 ]
+
 

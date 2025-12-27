@@ -31,6 +31,18 @@
             <a href="{% url 'student_profile' student.id %}" class="sidebar-item">
                 <i class="bi bi-person"></i> Mon profil
             </a>
+            <a href="{% url 'edit_profile' %}" class="sidebar-item">
+                <i class="bi bi-pencil"></i> Éditer mon profil
+            </a>
+            <a href="{% url 'groups_list' %}" class="sidebar-item">
+                <i class="bi bi-people-fill"></i> Groupes
+            </a>
+            <a href="{% url 'events_list' %}" class="sidebar-item">
+                <i class="bi bi-calendar-event"></i> Événements
+            </a>
+            <a href="{% url 'notifications' %}" class="sidebar-item">
+                <i class="bi bi-bell"></i> Notifications
+            </a>
         </div>
     </div>
     
@@ -153,4 +165,5 @@ function likePost(postId) {
 }
 </script>
 {% endblock %}
+
 
