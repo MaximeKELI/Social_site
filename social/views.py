@@ -86,10 +86,26 @@ def dashboard(request):
     # Récupérer les conversations de l'étudiant
     conversations = Conversation.objects.filter(participants=student).order_by('-updated_at')
     
+    # Calculer le nombre de messages non lus
+    unread_messages_count = 0
+    for conversation in conversations:
+        unread = Message.objects.filter(
+            conversation=conversation
+        ).exclude(sender=student).filter(is_read=False).count()
+        unread_messages_count += unread
+    
+    # Calculer le nombre de notifications non lues
+    unread_notifications_count = Notification.objects.filter(
+        recipient=student,
+        is_read=False
+    ).count()
+    
     context = {
         'student': student,
         'posts': posts,
         'conversations': conversations,
+        'unread_messages_count': unread_messages_count,
+        'unread_notifications_count': unread_notifications_count,
     }
     return render(request, 'social/dashboard.html', context)
 
