@@ -91,6 +91,9 @@
             </a>
             <a href="{% url 'notifications' %}" class="sidebar-item">
                 <i class="bi bi-bell"></i> Notifications
+                {% if unread_notifications_count > 0 %}
+                    <span class="badge-notification">{{ unread_notifications_count }}</span>
+                {% endif %}
             </a>
         </div>
     </div>
