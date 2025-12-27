@@ -122,6 +122,8 @@ def create_post(request):
             post.school = student.school
             post.author = student
             post.save()
+            # Créer des notifications pour les étudiants de la même école (optionnel)
+            # On peut limiter cela pour éviter trop de notifications
             messages.success(request, 'Post créé avec succès !')
             return redirect('dashboard')
     else:
@@ -183,6 +185,16 @@ def like_post(request, post_id):
     else:
         post.likes.add(student)
         liked = True
+        # Créer une notification pour l'auteur du post
+        if post.author != student:
+            Notification.objects.create(
+                recipient=post.author,
+                sender=student,
+                notification_type='like',
+                title='Nouveau like',
+                message=f"{student.full_name} a aimé votre post: {post.title}",
+                related_post=post
+            )
     
     return JsonResponse({'liked': liked, 'like_count': post.like_count})
 
@@ -273,6 +285,16 @@ def conversation_detail(request, conversation_id):
             message.sender = student
             message.save()
             conversation.save()  # Met à jour updated_at
+            # Créer une notification pour les autres participants
+            for participant in conversation.participants.exclude(id=student.id):
+                Notification.objects.create(
+                    recipient=participant,
+                    sender=student,
+                    notification_type='message',
+                    title='Nouveau message',
+                    message=f"{student.full_name} vous a envoyé un message",
+                    related_message=message
+                )
             return redirect('conversation_detail', conversation_id=conversation_id)
     else:
         form = MessageForm()
