@@ -230,6 +230,37 @@
                                     <i class="bi bi-house-door"></i> Tableau de bord
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'school_groups_list' %}">
+                                    <i class="bi bi-people-fill"></i> Groupes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'school_events_list' %}">
+                                    <i class="bi bi-calendar-event"></i> Événements
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'school_conversations_list' %}">
+                                    <i class="bi bi-chat-dots"></i> Messages
+                                    {% if unread_messages_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_messages_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'school_statistics' %}">
+                                    <i class="bi bi-graph-up"></i> Statistiques
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'school_notifications' %}">
+                                    <i class="bi bi-bell"></i> Notifications
+                                    {% if unread_notifications_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_notifications_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
                         {% endif %}
                     {% endif %}
                 </ul>
