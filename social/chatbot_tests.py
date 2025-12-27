@@ -362,8 +362,10 @@ class ChatbotTests(TestCase):
         mock_model = MagicMock()
         mock_model.generate_content.return_value = mock_response
         
+        # Créer un mock pour GenerationConfig
+        mock_config = MagicMock()
+        mock_genai.types.GenerationConfig = MagicMock(return_value=mock_config)
         mock_genai.GenerativeModel.return_value = mock_model
-        mock_genai.types.GenerationConfig = MagicMock()
         
         self.client.login(username='student1', password='testpass123')
         response = self.client.post(
@@ -372,22 +374,23 @@ class ChatbotTests(TestCase):
             content_type='application/json'
         )
         
-        # Vérifier que generate_content a été appelé avec la bonne config
+        # Vérifier que generate_content a été appelé
         mock_model.generate_content.assert_called_once()
         call_kwargs = mock_model.generate_content.call_args[1]
         
         # Vérifier que generation_config est présent
         self.assertIn('generation_config', call_kwargs)
-        config = call_kwargs['generation_config']
         
-        # Vérifier les paramètres de configuration
-        self.assertEqual(config.temperature, 0.7)
-        self.assertEqual(config.top_p, 0.8)
-        self.assertEqual(config.top_k, 40)
-        self.assertEqual(config.max_output_tokens, 1024)
+        # Vérifier que GenerationConfig a été appelé avec les bons paramètres
+        mock_genai.types.GenerationConfig.assert_called_once()
+        config_call = mock_genai.types.GenerationConfig.call_args[1]
+        self.assertEqual(config_call['temperature'], 0.7)
+        self.assertEqual(config_call['top_p'], 0.8)
+        self.assertEqual(config_call['top_k'], 40)
+        self.assertEqual(config_call['max_output_tokens'], 1024)
     
     @patch('social.chatbot_views.genai')
-    @patch('social.chatbot_views.log_security_event')
+    @patch('social.security.log_security_event')
     def test_chatbot_api_logs_security_event(self, mock_log, mock_genai):
         """Test que les interactions sont loggées"""
         mock_response = MagicMock()
