@@ -46,6 +46,10 @@ urlpatterns = [
     path('event/<int:event_id>/', views.event_detail, name='event_detail'),
     path('event/create/', views.create_event, name='create_event'),
     
+    # Chatbot IA
+    path('chatbot/', chatbot_views.chatbot_view, name='chatbot'),
+    path('chatbot/api/', chatbot_views.chatbot_api, name='chatbot_api'),
+    
     # School features
     path('school/groups/', school_views.school_groups_list, name='school_groups_list'),
     path('school/group/<int:group_id>/', school_views.school_group_detail, name='school_group_detail'),

@@ -5,3 +5,4 @@ django-extensions>=4.1.0
 matplotlib>=3.10.0
 reportlab>=4.4.0
 pandas>=2.3.0
+google-generativeai>=0.3.0
