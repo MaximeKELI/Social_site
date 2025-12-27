@@ -1,0 +1,79 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Notifications - {{ school.name }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-bell"></i> Notifications
+                    {% if unread_count > 0 %}
+                        <span class="badge bg-danger ms-2">{{ unread_count }}</span>
+                    {% endif %}
+                </h4>
+                {% if unread_count > 0 %}
+                    <a href="?mark_read=true" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-check-all"></i> Tout marquer comme lu
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% for notification in notifications %}
+                <div class="d-flex align-items-start p-3 border-bottom {% if not notification.is_read %}bg-light{% endif %}">
+                    <div class="me-3">
+                        {% if notification.notification_type == 'like' %}
+                            <i class="bi bi-heart-fill text-danger" style="font-size: 1.5rem;"></i>
+                        {% elif notification.notification_type == 'comment' %}
+                            <i class="bi bi-chat-fill text-primary" style="font-size: 1.5rem;"></i>
+                        {% elif notification.notification_type == 'message' %}
+                            <i class="bi bi-envelope-fill text-info" style="font-size: 1.5rem;"></i>
+                        {% elif notification.notification_type == 'group' %}
+                            <i class="bi bi-people-fill text-success" style="font-size: 1.5rem;"></i>
+                        {% elif notification.notification_type == 'event' %}
+                            <i class="bi bi-calendar-event text-warning" style="font-size: 1.5rem;"></i>
+                        {% else %}
+                            <i class="bi bi-bell-fill text-warning" style="font-size: 1.5rem;"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{{ notification.title }}</h6>
+                        <p class="mb-1">{{ notification.message }}</p>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                        {% if notification.related_post %}
+                            <div class="mt-2">
+                                <a href="{% url 'post_detail' notification.related_post.id %}" class="btn btn-sm btn-outline-primary">
+                                    Voir le post
+                                </a>
+                            </div>
+                        {% elif notification.related_group %}
+                            <div class="mt-2">
+                                <a href="{% url 'school_group_detail' notification.related_group.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-people"></i> Voir le groupe
+                                </a>
+                            </div>
+                        {% elif notification.related_event %}
+                            <div class="mt-2">
+                                <a href="{% url 'school_event_detail' notification.related_event.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-calendar"></i> Voir l'événement
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if not notification.is_read %}
+                        <span class="badge bg-primary">Nouveau</span>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Aucune notification</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
