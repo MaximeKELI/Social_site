@@ -3,6 +3,62 @@
 {% block title %}Tableau de bord École - School Social{% endblock %}
 
 {% block content %}
+<!-- Compteurs de messages et notifications -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card notification-counter-card">
+            <div class="card-body">
+                <a href="{% url 'school_conversations_list' %}" class="text-decoration-none text-dark">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-chat-dots-fill me-3" style="font-size: 2rem; color: var(--primary-color);"></i>
+                            <div>
+                                <div class="fw-bold fs-5">Messages</div>
+                                <small class="text-muted">Non lus</small>
+                            </div>
+                        </div>
+                        {% if unread_messages_count > 0 %}
+                            <span class="badge bg-danger rounded-pill" style="font-size: 1.2rem; padding: 10px 16px; min-width: 50px;">
+                                {{ unread_messages_count }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill" style="font-size: 1.2rem; padding: 10px 16px; min-width: 50px;">
+                                0
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card notification-counter-card">
+            <div class="card-body">
+                <a href="{% url 'school_notifications' %}" class="text-decoration-none text-dark">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-bell-fill me-3" style="font-size: 2rem; color: var(--secondary-color);"></i>
+                            <div>
+                                <div class="fw-bold fs-5">Notifications</div>
+                                <small class="text-muted">Non lues</small>
+                            </div>
+                        </div>
+                        {% if unread_notifications_count > 0 %}
+                            <span class="badge bg-danger rounded-pill" style="font-size: 1.2rem; padding: 10px 16px; min-width: 50px;">
+                                {{ unread_notifications_count }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill" style="font-size: 1.2rem; padding: 10px 16px; min-width: 50px;">
+                                0
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">

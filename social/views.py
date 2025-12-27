@@ -121,10 +121,27 @@ def school_dashboard(request):
     students = Student.objects.filter(school=school, is_active=True)
     posts = Post.objects.filter(school=school).order_by('-created_at')[:10]
     
+    # Calculer le nombre de messages non lus
+    conversations = Conversation.objects.filter(participants_schools=school)
+    unread_messages_count = 0
+    for conversation in conversations:
+        unread = Message.objects.filter(
+            conversation=conversation
+        ).exclude(sender_school=school).filter(is_read=False).count()
+        unread_messages_count += unread
+    
+    # Calculer le nombre de notifications non lues
+    unread_notifications_count = Notification.objects.filter(
+        recipient_school=school,
+        is_read=False
+    ).count()
+    
     context = {
         'school': school,
         'students': students,
         'posts': posts,
+        'unread_messages_count': unread_messages_count,
+        'unread_notifications_count': unread_notifications_count,
     }
     return render(request, 'social/school_dashboard.html', context)
 

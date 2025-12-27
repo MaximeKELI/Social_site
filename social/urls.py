@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from . import school_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -44,6 +45,22 @@ urlpatterns = [
     path('events/', views.events_list, name='events_list'),
     path('event/<int:event_id>/', views.event_detail, name='event_detail'),
     path('event/create/', views.create_event, name='create_event'),
+    
+    # School features
+    path('school/groups/', school_views.school_groups_list, name='school_groups_list'),
+    path('school/group/<int:group_id>/', school_views.school_group_detail, name='school_group_detail'),
+    path('school/group/create/', school_views.school_create_group, name='school_create_group'),
+    path('school/events/', school_views.school_events_list, name='school_events_list'),
+    path('school/event/<int:event_id>/', school_views.school_event_detail, name='school_event_detail'),
+    path('school/event/create/', school_views.school_create_event, name='school_create_event'),
+    path('school/conversations/', school_views.school_conversations_list, name='school_conversations_list'),
+    path('school/conversation/<int:conversation_id>/', school_views.school_conversation_detail, name='school_conversation_detail'),
+    path('school/conversation/start/<int:student_id>/', school_views.school_start_conversation, name='school_start_conversation'),
+    path('school/notifications/', school_views.school_notifications, name='school_notifications'),
+    path('school/statistics/', school_views.school_statistics, name='school_statistics'),
+    path('school/statistics/chart/<str:chart_type>/', school_views.school_statistics_chart, name='school_statistics_chart'),
+    path('school/export/csv/', school_views.school_export_csv, name='school_export_csv'),
+    path('school/export/pdf/', school_views.school_export_pdf, name='school_export_pdf'),
 ]
 
 
