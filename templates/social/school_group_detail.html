@@ -1,0 +1,114 @@
+{% extends 'social/base.html' %}
+
+{% block title %}{{ group.name }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    {% if group.image %}
+                        <img src="{{ group.image.url }}" class="me-4" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px;" alt="{{ group.name }}">
+                    {% else %}
+                        <div class="bg-primary d-flex align-items-center justify-content-center me-4" style="width: 150px; height: 150px; border-radius: 10px;">
+                            <i class="bi bi-people-fill text-white" style="font-size: 4rem;"></i>
+                        </div>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <h2 class="mb-2">{{ group.name }}</h2>
+                        <p class="text-muted mb-2">{{ group.description }}</p>
+                        <div class="d-flex gap-3 align-items-center">
+                            <span class="text-muted">
+                                <i class="bi bi-people"></i> {{ group.member_count }} membres
+                            </span>
+                            <span class="text-muted">
+                                <i class="bi bi-building"></i> {{ group.school.name }}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if group_chat %}
+                            <a href="{% url 'group_chat' group.id %}" class="btn btn-primary">
+                                <i class="bi bi-chat-dots"></i> Chat du groupe
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Posts du groupe</h5>
+            </div>
+            <div class="card-body">
+                {% for post in posts %}
+                <div class="mb-4 pb-4 border-bottom">
+                    <div class="d-flex align-items-center mb-2">
+                        {% if post.author.profile_picture %}
+                            <img src="{{ post.author.profile_picture.url }}" class="profile-picture me-2" alt="Profile">
+                        {% else %}
+                            <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold">{{ post.author.full_name }}</div>
+                            <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                        </div>
+                    </div>
+                    <h6>{{ post.title }}</h6>
+                    <p>{{ post.content|truncatewords:30 }}</p>
+                    <a href="{% url 'post_detail' post.id %}" class="btn btn-sm btn-outline-primary">Voir plus</a>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">Aucun post pour le moment</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if group_chat %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-chat-dots"></i> Chat du groupe
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">Discutez avec tous les membres du groupe</p>
+                <a href="{% url 'group_chat' group.id %}" class="btn btn-primary w-100">
+                    <i class="bi bi-chat-dots"></i> Ouvrir le chat
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Événements du groupe</h6>
+            </div>
+            <div class="card-body">
+                {% for event in events %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <h6 class="mb-1">{{ event.title }}</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> {{ event.start_date|date:"d M Y" }}
+                    </small>
+                    <div class="mt-2">
+                        <a href="{% url 'school_event_detail' event.id %}" class="btn btn-sm btn-outline-primary">Voir</a>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted small">Aucun événement</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
