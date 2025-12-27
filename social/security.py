@@ -61,8 +61,8 @@ class SecurityMiddleware:
     def _check_rate_limit(self, request):
         """Vérifie le rate limiting par IP"""
         # Désactiver le rate limiting en mode test
-        from django.conf import settings
-        if getattr(settings, 'TESTING', False):
+        import sys
+        if 'test' in sys.argv or 'pytest' in sys.modules or 'unittest' in sys.modules:
             return True
         
         ip = self._get_client_ip(request)

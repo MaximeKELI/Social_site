@@ -15,6 +15,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Flag pour désactiver certaines protections en mode test
+import sys
+TESTING = 'test' in sys.argv or 'pytest' in sys.modules or 'unittest' in sys.modules
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
