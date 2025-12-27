@@ -123,11 +123,47 @@ Réponds toujours en français."""
         logger.error(f"Erreur dans chatbot_api: {error_str}", exc_info=True)
         
         # Gestion spécifique des erreurs de quota
-        if '429' in error_str or 'quota' in error_str.lower() or 'ResourceExhausted' in error_str:
+        if '429' in error_str or 'quota' in error_str.lower() or 'ResourceExhausted' in str(type(e).__name__):
+            # Extraire le délai de retry depuis l'exception
+            retry_delay = None
+            try:
+                # Essayer d'extraire depuis l'attribut retry_delay si disponible
+                if hasattr(e, 'retry_delay'):
+                    retry_delay = e.retry_delay
+                elif hasattr(e, 'details'):
+                    # Chercher dans les détails de l'erreur
+                    import re
+                    match = re.search(r'retry in ([\d.]+)s', error_str.lower())
+                    if match:
+                        retry_delay = float(match.group(1))
+            except:
+                pass
+            
+            # Vérifier si le quota est à 0 (pas de quota disponible)
+            quota_limit_zero = 'limit: 0' in error_str
+            
+            if quota_limit_zero:
+                error_msg = '⚠️ Le quota gratuit de l\'API Google Gemini n\'est pas disponible pour cette clé API. '
+                error_msg += 'Veuillez activer la facturation ou utiliser une clé API avec quota disponible. '
+                error_msg += 'Consultez: https://ai.google.dev/gemini-api/docs/rate-limits'
+            else:
+                error_msg = '⚠️ Le quota de l\'API Google Gemini a été dépassé. '
+                if retry_delay:
+                    minutes = int(retry_delay // 60)
+                    seconds = int(retry_delay % 60)
+                    if minutes > 0:
+                        error_msg += f'Veuillez réessayer dans environ {minutes} minute(s) et {seconds} seconde(s).'
+                    else:
+                        error_msg += f'Veuillez réessayer dans environ {int(retry_delay)} seconde(s).'
+                else:
+                    error_msg += 'Le service sera disponible une fois le quota réinitialisé (généralement après quelques minutes).'
+            
             return JsonResponse({
                 'success': False,
-                'error': 'Le quota de l\'API Google Gemini a été dépassé. Veuillez vérifier votre plan et vos limites d\'utilisation. Le service sera disponible une fois le quota réinitialisé.',
-                'error_type': 'quota_exceeded'
+                'error': error_msg,
+                'error_type': 'quota_exceeded',
+                'retry_delay': retry_delay,
+                'quota_limit_zero': quota_limit_zero
             }, status=429)
         
         # Gestion des erreurs de modèle non trouvé

@@ -298,9 +298,23 @@ chatbotForm.addEventListener('submit', async (e) => {
             let errorMessage = 'Désolé, une erreur est survenue. Veuillez réessayer.';
             
             if (data.error_type === 'quota_exceeded') {
-                errorMessage = '⚠️ Le quota de l\'API Google Gemini a été dépassé. Le service sera disponible une fois le quota réinitialisé (généralement après quelques minutes ou heures).';
+                // Utiliser le message d'erreur du serveur qui contient déjà les détails
+                errorMessage = data.error || '⚠️ Le quota de l\'API Google Gemini a été dépassé.';
+                
                 // Afficher l'avertissement dans le header
-                document.getElementById('quotaWarning').style.display = 'block';
+                const quotaWarning = document.getElementById('quotaWarning');
+                if (quotaWarning) {
+                    quotaWarning.style.display = 'block';
+                    if (data.quota_limit_zero) {
+                        quotaWarning.innerHTML = '<i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> Le quota gratuit n\'est pas disponible. Veuillez activer la facturation sur Google Cloud ou utiliser une autre clé API.';
+                        quotaWarning.style.background = 'rgba(255, 193, 7, 0.3)';
+                    } else if (data.retry_delay) {
+                        const minutes = Math.floor(data.retry_delay / 60);
+                        const seconds = Math.floor(data.retry_delay % 60);
+                        quotaWarning.innerHTML = `<i class="bi bi-clock"></i> <strong>Quota dépassé:</strong> Réessayez dans ${minutes > 0 ? minutes + ' min ' : ''}${seconds} sec`;
+                        quotaWarning.style.background = 'rgba(255, 193, 7, 0.3)';
+                    }
+                }
             } else if (data.error_type === 'model_not_found') {
                 errorMessage = '⚠️ Le modèle IA n\'est pas disponible. Veuillez contacter l\'administrateur.';
             } else if (data.error_type === 'authentication_error') {
