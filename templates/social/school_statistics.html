@@ -1,0 +1,175 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Statistiques - {{ school.name }} - School Social{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Statistiques Détaillées
+                    </h2>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'school_export_pdf' %}" class="btn btn-danger">
+                            <i class="bi bi-file-pdf"></i> Exporter PDF
+                        </a>
+                        <a href="{% url 'school_export_csv' %}" class="btn btn-success">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Exporter CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-people-fill" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                <h3 class="mt-2">{{ total_students }}</h3>
+                <p class="text-muted mb-0">Total étudiants</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-mortarboard" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                <h3 class="mt-2">{{ current_students }}</h3>
+                <p class="text-muted mb-0">Étudiants actuels</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-mortarboard-fill" style="font-size: 2.5rem; color: var(--secondary-color);"></i>
+                <h3 class="mt-2">{{ alumni_students }}</h3>
+                <p class="text-muted mb-0">Anciens étudiants</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-file-post" style="font-size: 2.5rem; color: var(--danger-color);"></i>
+                <h3 class="mt-2">{{ total_posts }}</h3>
+                <p class="text-muted mb-0">Total posts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-people-fill" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+                <h3 class="mt-2">{{ total_groups }}</h3>
+                <p class="text-muted mb-0">Groupes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-calendar-event" style="font-size: 2.5rem; color: var(--secondary-color);"></i>
+                <h3 class="mt-2">{{ total_events }}</h3>
+                <p class="text-muted mb-0">Événements</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-chat-dots" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                <h3 class="mt-2">{{ total_messages }}</h3>
+                <p class="text-muted mb-0">Messages</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Posts par mois</h5>
+            </div>
+            <div class="card-body">
+                <img src="{% url 'school_statistics_chart' 'posts_by_month' %}" alt="Posts par mois" class="img-fluid">
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Répartition par statut</h5>
+            </div>
+            <div class="card-body">
+                <img src="{% url 'school_statistics_chart' 'students_by_status' %}" alt="Répartition par statut" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Étudiants par année de diplôme</h5>
+            </div>
+            <div class="card-body">
+                <img src="{% url 'school_statistics_chart' 'students_by_year' %}" alt="Étudiants par année" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Activité récente (7 derniers jours)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center">
+                        <h4>{{ recent_posts }}</h4>
+                        <p class="text-muted">Nouveaux posts</p>
+                    </div>
+                    <div class="col-6 text-center">
+                        <h4>{{ recent_messages }}</h4>
+                        <p class="text-muted">Nouveaux messages</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Export de données</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Téléchargez vos données pour l'analyse de données (Data Science)</p>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'school_export_csv' %}" class="btn btn-success w-100">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV (Excel, Python, R)
+                    </a>
+                    <a href="{% url 'school_export_pdf' %}" class="btn btn-danger w-100">
+                        <i class="bi bi-file-pdf"></i> PDF (Rapport)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
