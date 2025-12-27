@@ -1,6 +1,8 @@
 """
 Context processors pour ajouter des données globales aux templates
 """
+from .models import Conversation, Message, Notification
+
 
 def user_notifications(request):
     """Ajoute le nombre de notifications et messages non lus au contexte"""
@@ -22,7 +24,6 @@ def user_notifications(request):
             unread_messages_count += unread
         
         # Calculer le nombre de notifications non lues
-        from .models import Notification
         unread_notifications_count = Notification.objects.filter(
             recipient=student,
             is_read=False

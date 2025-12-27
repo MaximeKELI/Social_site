@@ -154,6 +154,24 @@
             font-size: 0.7rem;
             margin-left: auto;
         }
+        
+        .notification-counter-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        
+        .notification-counter-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .notification-counter-card a {
+            color: inherit;
+        }
+        
+        .notification-counter-card a:hover {
+            text-decoration: none;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -183,6 +201,9 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conversations_list' %}">
                                     <i class="bi bi-chat-dots"></i> Messages
+                                    {% if unread_messages_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_messages_count }}</span>
+                                    {% endif %}
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -198,6 +219,9 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'notifications' %}">
                                     <i class="bi bi-bell"></i> Notifications
+                                    {% if unread_notifications_count > 0 %}
+                                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_notifications_count }}</span>
+                                    {% endif %}
                                 </a>
                             </li>
                         {% elif user.school_profile %}
