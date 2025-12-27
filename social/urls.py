@@ -37,6 +37,7 @@ urlpatterns = [
     # Groups
     path('groups/', views.groups_list, name='groups_list'),
     path('group/<int:group_id>/', views.group_detail, name='group_detail'),
+    path('group/<int:group_id>/chat/', views.group_chat, name='group_chat'),
     path('group/create/', views.create_group, name='create_group'),
     
     # Events

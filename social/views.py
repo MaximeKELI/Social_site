@@ -360,6 +360,70 @@ def conversations_list(request):
 
 
 @login_required
+def group_chat(request, group_id):
+    """Chat de groupe"""
+    if not hasattr(request.user, 'student_profile'):
+        messages.error(request, 'Accès réservé aux étudiants.')
+        return redirect('home')
+    
+    student = request.user.student_profile
+    group = get_object_or_404(Group, id=group_id)
+    
+    # Vérifier que l'étudiant est membre du groupe
+    if not group.members.filter(id=student.id).exists():
+        messages.error(request, 'Vous devez être membre du groupe pour accéder au chat.')
+        return redirect('group_detail', group_id=group_id)
+    
+    # Récupérer ou créer le chat de groupe
+    group_chat, created = Conversation.objects.get_or_create(
+        group=group,
+        is_group_chat=True,
+        defaults={}
+    )
+    
+    # S'assurer que l'étudiant est dans les participants
+    if student not in group_chat.participants.all():
+        group_chat.participants.add(student)
+    
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.conversation = group_chat
+            message.sender = student
+            message.save()
+            group_chat.save()  # Met à jour updated_at
+            
+            # Créer des notifications pour les autres membres du groupe
+            for member in group.members.exclude(id=student.id):
+                Notification.objects.create(
+                    recipient=member,
+                    sender=student,
+                    notification_type='message',
+                    title='Nouveau message dans le groupe',
+                    message=f"{student.full_name} a envoyé un message dans {group.name}",
+                    related_message=message
+                )
+            
+            return redirect('group_chat', group_id=group_id)
+    else:
+        form = MessageForm()
+    
+    # Marquer les messages comme lus pour cet étudiant
+    Message.objects.filter(conversation=group_chat).exclude(sender=student).update(is_read=True)
+    
+    messages_list = Message.objects.filter(conversation=group_chat).order_by('created_at')
+    
+    context = {
+        'group': group,
+        'group_chat': group_chat,
+        'messages': messages_list,
+        'form': form,
+    }
+    return render(request, 'social/group_chat.html', context)
+
+
+@login_required
 def edit_profile(request):
     """Éditer le profil de l'étudiant"""
     if not hasattr(request.user, 'student_profile'):
